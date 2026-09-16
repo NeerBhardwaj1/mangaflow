@@ -3,7 +3,7 @@
 // ==========================================================================
 
 const API = {
-  DEFAULT_LAN_HOST: 'https://mangaflow.onrender.com',
+  DEFAULT_LAN_HOST: 'https://mangaflow-wi3s.onrender.com',
 
   getBaseUrl() {
     const saved = localStorage.getItem('mf_server_url');
