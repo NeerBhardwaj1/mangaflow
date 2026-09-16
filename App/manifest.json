@@ -1,0 +1,20 @@
+{
+  "name": "MangaFlow",
+  "short_name": "MangaFlow",
+  "description": "Read Manga, Manhwa & Comics — Free HD reader with bookmarks and history",
+  "start_url": "/app/",
+  "display": "standalone",
+  "background_color": "#06080f",
+  "theme_color": "#6366f1",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/app/images/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["entertainment", "books"],
+  "lang": "en"
+}

@@ -1,0 +1,12 @@
+{
+  "appId": "com.mangaflow.app",
+  "appName": "MangaFlow",
+  "webDir": "App",
+  "server": {
+    "cleartext": true,
+    "androidScheme": "http"
+  },
+  "android": {
+    "allowMixedContent": true
+  }
+}

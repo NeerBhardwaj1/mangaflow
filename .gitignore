@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# APK binary (too large for git, share separately)
+*.apk
+
+# Screenshots / audit images
+*.png
+*.webp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temp files
+temp_*
+*.log
+
+# IDE
+.vscode/
+.idea/
+
+# Capacitor native build output (rebuilt locally)
+android/.gradle/
+android/app/build/
+android/build/
+android/.idea/
+android/local.properties
