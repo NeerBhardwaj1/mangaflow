@@ -60,6 +60,8 @@ const Router = {
       GenresView.render();
     } else if (path === '/library') {
       LibraryView.render(queryParams.tab || 'bookmarks');
+    } else if (path === '/settings') {
+      if (window.AppSettingsView) AppSettingsView.render();
     } else {
       // Fallback to home
       HomeView.render();

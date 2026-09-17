@@ -6,6 +6,8 @@ const http = require('http');
 const { URL } = require('url');
 const MangaDex = require('./providers/mangadex');
 
+const fs = require('fs');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -13,8 +15,52 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/app', express.static(path.join(__dirname, 'App')));
+
 app.get('/MangaFlow.apk', (req, res) => {
   res.download(path.join(__dirname, 'MangaFlow.apk'), 'MangaFlow.apk');
+});
+
+// App Version & In-App Update Endpoints
+app.get('/api/app/version', (req, res) => {
+  try {
+    const versionPath = path.join(__dirname, 'version.json');
+    if (fs.existsSync(versionPath)) {
+      const data = JSON.parse(fs.readFileSync(versionPath, 'utf8'));
+      return res.json(data);
+    }
+  } catch (e) {
+    console.error('[Version API Error]', e.message);
+  }
+  res.json({
+    version: '1.0.0',
+    versionCode: 1,
+    mandatory: false,
+    title: 'MangaFlow v1.0.0',
+    releaseDate: '2026-09-17',
+    fileSize: '7.2 MB',
+    changelog: ['Official MangaFlow release'],
+    downloadUrl: '/api/app/download-latest'
+  });
+});
+
+app.get('/api/app/download-latest', (req, res) => {
+  const buildApk = path.join(__dirname, 'android', 'app', 'build', 'outputs', 'apk', 'debug', 'app-debug.apk');
+  const rootApk = path.join(__dirname, 'MangaFlow.apk');
+
+  let apkToServe = null;
+  if (fs.existsSync(rootApk)) {
+    apkToServe = rootApk;
+  } else if (fs.existsSync(buildApk)) {
+    apkToServe = buildApk;
+  }
+
+  if (apkToServe) {
+    res.setHeader('Content-Type', 'application/vnd.android.package-archive');
+    return res.download(apkToServe, 'MangaFlow.apk');
+  }
+
+  // Fallback: Redirect to GitHub Releases CDN
+  res.redirect(302, 'https://github.com/NeerBhardwaj1/mangaflow/releases/latest/download/MangaFlow.apk');
 });
 
 app.get('/api/health', (req, res) => {

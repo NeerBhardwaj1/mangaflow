@@ -1,0 +1,82 @@
+name: Build & Release MangaFlow APK
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build APK & Publish Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Node Dependencies
+        run: npm ci || npm install
+
+      - name: Sync Capacitor Web Assets
+        run: npx cap copy android
+
+      - name: Extract Version Info
+        id: meta
+        run: |
+          VERSION=$(node -e "try{console.log(require('./version.json').version)}catch(e){console.log('1.1.0')}")
+          VERSION_CODE=$(node -e "try{console.log(require('./version.json').versionCode)}catch(e){console.log('2')}")
+          TITLE=$(node -e "try{console.log(require('./version.json').title)}catch(e){console.log('MangaFlow Update')}")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "version_code=$VERSION_CODE" >> $GITHUB_OUTPUT
+          echo "title=$TITLE" >> $GITHUB_OUTPUT
+          echo "Building MangaFlow v$VERSION (Build $VERSION_CODE)"
+
+      - name: Make Gradlew Executable
+        run: chmod +x android/gradlew
+
+      - name: Build Android Release APK
+        working-directory: android
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Prepare APK Output
+        run: |
+          mkdir -p dist
+          cp android/app/build/outputs/apk/release/app-release.apk dist/MangaFlow.apk
+
+      - name: Publish or Update GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: ${{ steps.meta.outputs.title }} (v${{ steps.meta.outputs.version }})
+          body: |
+            ## 🚀 MangaFlow Android App Update
+            **Version**: `v${{ steps.meta.outputs.version }}` (Build `${{ steps.meta.outputs.version_code }}`)
+            **Automated Release**: Built directly from commit `${{ github.sha }}`.
+
+            ### 📥 Direct Download:
+            - **[MangaFlow.apk](https://github.com/NeerBhardwaj1/mangaflow/releases/latest/download/MangaFlow.apk)**
+          files: |
+            dist/MangaFlow.apk
+          make_latest: true
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

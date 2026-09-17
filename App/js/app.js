@@ -6,7 +6,7 @@ const App = {
   searchDebounce: null,
   toastTimeout: null,
 
-  init() {
+  async init() {
     // 0. Detect mobile/native platform
     const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || 
       (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) ||
@@ -16,7 +16,7 @@ const App = {
     }
 
     // 0b. Detect server (local dev vs cloud Render)
-    API.detectFastestServer();
+    await API.detectFastestServer();
 
     // 1. Initialize Store Badge
     Store.updateBadge();
@@ -43,6 +43,11 @@ const App = {
 
     // 8. Start Router
     Router.init();
+
+    // 9. Initialize In-App Update Engine
+    if (window.AppUpdater) {
+      AppUpdater.init();
+    }
   },
 
   handleBackButton() {
@@ -63,7 +68,8 @@ const App = {
       document.getElementById('advanced-filter-modal'),
       document.getElementById('shelf-picker-modal'),
       document.getElementById('theme-picker-modal'),
-      document.getElementById('server-modal')
+      document.getElementById('server-modal'),
+      document.getElementById('app-update-modal')
     ];
 
     for (const m of modals) {

@@ -17,6 +17,11 @@ const App = {
 
     // Start Router
     Router.init();
+
+    // Auto-check for app updates
+    if (window.AppUpdater) {
+      AppUpdater.init();
+    }
   },
 
   bindHeaderScroll() {

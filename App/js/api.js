@@ -10,18 +10,36 @@ const API = {
   async detectFastestServer() {
     const saved = localStorage.getItem('mf_server_url');
     if (saved) {
-      this._resolvedBaseUrl = saved.replace(/\/+$/, '');
-      return this._resolvedBaseUrl;
+      const clean = saved.replace(/\/+$/, '');
+      // If user had saved localhost, test if it's currently reachable
+      if (clean.includes('localhost') || clean.includes('127.0.0.1')) {
+        try {
+          const ctrl = new AbortController();
+          const tid = setTimeout(() => ctrl.abort(), 800);
+          const res = await fetch(`${clean}/api/health`, { signal: ctrl.signal });
+          clearTimeout(tid);
+          if (res.ok) {
+            this._resolvedBaseUrl = clean;
+            return clean;
+          }
+        } catch (e) {
+          console.warn('[API] Localhost unreachable, falling back to cloud host');
+        }
+      } else {
+        this._resolvedBaseUrl = clean;
+        return this._resolvedBaseUrl;
+      }
     }
-    // If USB debugging or local dev reverse tunnel is available
+
+    // Auto-detect USB debugging or local dev reverse tunnel on port 3000
     try {
       const ctrl = new AbortController();
-      const tid = setTimeout(() => ctrl.abort(), 600);
+      const tid = setTimeout(() => ctrl.abort(), 800);
       const res = await fetch(`${this.LOCAL_DEV_HOST}/api/health`, { signal: ctrl.signal });
       clearTimeout(tid);
       if (res.ok) {
         this._resolvedBaseUrl = this.LOCAL_DEV_HOST;
-        console.log('[API] Connected to local USB dev server on port 3000');
+        console.log('[API] Auto-detected local USB dev server on port 3000');
         return this.LOCAL_DEV_HOST;
       }
     } catch (e) {}
@@ -113,13 +131,30 @@ const API = {
   },
 
   async _fetch(path) {
+    if (this._resolvedBaseUrl === null && !localStorage.getItem('mf_server_url')) {
+      await this.detectFastestServer();
+    }
     const base = this.getBaseUrl();
     const fullUrl = `${base}${path.startsWith('/') ? '' : '/'}${path}`;
-    const res = await fetch(fullUrl);
-    if (!res.ok) throw new Error(`API ${res.status} on ${path}`);
-    const json = await res.json();
-    const rawData = json.data !== undefined ? json.data : json;
-    return this._deepResolveImages(rawData, base);
+    try {
+      const res = await fetch(fullUrl);
+      if (!res.ok) throw new Error(`API ${res.status} on ${path}`);
+      const json = await res.json();
+      const rawData = json.data !== undefined ? json.data : json;
+      return this._deepResolveImages(rawData, base);
+    } catch (err) {
+      if (base !== this.DEFAULT_LAN_HOST) {
+        console.warn(`[API] Host ${base} failed, falling back to ${this.DEFAULT_LAN_HOST}`);
+        this._resolvedBaseUrl = this.DEFAULT_LAN_HOST;
+        const fallbackUrl = `${this.DEFAULT_LAN_HOST}${path.startsWith('/') ? '' : '/'}${path}`;
+        const res2 = await fetch(fallbackUrl);
+        if (!res2.ok) throw new Error(`API ${res2.status} on fallback ${path}`);
+        const json2 = await res2.json();
+        const rawData2 = json2.data !== undefined ? json2.data : json2;
+        return this._deepResolveImages(rawData2, this.DEFAULT_LAN_HOST);
+      }
+      throw err;
+    }
   },
 
   async getHome() {

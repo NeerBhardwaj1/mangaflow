@@ -55,6 +55,7 @@ const Router = {
     if (path === '/latest') return AppLatestView.render(params.page || 1);
     if (path === '/search') return AppSearchView.render(params);
     if (path === '/library') return AppLibraryView.render(params);
+    if (path === '/settings') return AppSettingsView.render();
 
     // /manga/:slug
     const mangaMatch = path.match(/^\/manga\/(.+)/);
