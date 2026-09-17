@@ -1,325 +1,604 @@
 // ==========================================================================
-// MangaFlow Home View
+// Curated Famous & Iconic Manga (Demon Slayer, Dandadan, A Silent Voice, One Piece, etc.)
 // ==========================================================================
+const FAMOUS_MANGA_PRIORITY = [
+  {
+    name: 'Violet Evergarden',
+    slug: 'violet-evergarden',
+    cover: './images/covers/violet-evergarden.jpg',
+    status: 'Completed',
+    rating: '5.0',
+    displayChapters: '16 chapters',
+    displayViews: '4.8M views',
+    summary: 'The war is over, and Violet Evergarden needs work. Employed at the CH Postal Services as an Auto Memories Doll, she transcribes letters while searching for the meaning behind the final words of Major Gilbert: "I love you."',
+    isHot: true,
+  },
+  {
+    name: 'Frieren: Beyond Journey’s End',
+    slug: 'frieren-beyond-journeys-end',
+    cover: '/api/proxy/image?url=https%3A%2F%2Frx.comizy.io%2Fcovers%2F4f03af06d674.webp',
+    status: 'Ongoing',
+    rating: '5.0',
+    displayChapters: '147 chapters',
+    displayViews: '7.6M views',
+    summary: 'Elf mage Frieren outlives her fellow hero party members after defeating the Demon King. Reflecting on human mortality and regrets, she begins a new quest to heaven to reunite with Himmel.',
+    isHot: true,
+  },
+  {
+    name: 'Vinland Saga',
+    slug: 'vinland-saga',
+    cover: '/api/proxy/image?url=https%3A%2F%2Frx.comizy.io%2Fcovers%2Fb7bc8522ce53.webp',
+    status: 'Ongoing',
+    rating: '5.0',
+    displayChapters: '232 chapters',
+    displayViews: '6.4M views',
+    summary: 'Raised by the Vikings who murdered his father, Thorfinn becomes a terrifying young warrior obsessed with dueling Askeladd, before seeking a peaceful land named Vinland.',
+    isHot: true,
+  },
+  {
+    name: 'Death Note',
+    slug: 'death-note',
+    cover: '/api/proxy/image?url=https%3A%2F%2Frx.comizy.io%2Fcovers%2F8ffa689542dd.webp',
+    status: 'Completed',
+    rating: '5.0',
+    displayChapters: '114 chapters',
+    displayViews: '9.2M views',
+    summary: 'High school prodigy Light Yagami finds the Death Note dropped by Shinigami Ryuk, seeking to cleanse the world of criminals while eluding the brilliant detective L.',
+    isHot: true,
+  },
+  {
+    name: 'Your Name (Kimi no Na wa.)',
+    slug: 'kimi-no-na-wa',
+    cover: '/api/proxy/image?url=https%3A%2F%2Frx.comizy.io%2Fcovers%2F0405ceec5524.webp',
+    status: 'Completed',
+    rating: '5.0',
+    displayChapters: '9 chapters',
+    displayViews: '5.2M views',
+    summary: 'Mitsuha, a country girl, and Taki, a high school boy in Tokyo, find themselves switching bodies intermittently across timelines as a comet approaches Earth.',
+    isHot: true,
+  },
+  {
+    name: 'Steins;Gate',
+    slug: 'steins-gate',
+    cover: '/api/proxy/image?url=https%3A%2F%2Frx.comizy.io%2Fcovers%2F89590617e9f8.webp',
+    status: 'Completed',
+    rating: '4.9',
+    displayChapters: '20 chapters',
+    displayViews: '3.6M views',
+    summary: 'Eccentric inventor Rintaro Okabe accidentally modifies a microwave into a phone that can send messages back in time, triggering alternate world lines.',
+    isHot: true,
+  },
+  {
+    name: 'Demon Slayer: Kimetsu no Yaiba',
+    slug: 'kimetsu-no-yaiba',
+    cover: '/api/proxy/image?url=https%3A%2F%2Frx.comizy.io%2Fcovers%2Fa5a9645b9b9b.webp',
+    status: 'Completed',
+    rating: '5.0',
+    displayChapters: '243 chapters',
+    displayViews: '5.8M views',
+    summary: 'Tanjiro Kamado sets out on a perilous path to become a demon slayer to avenge his slaughtered family and cure his cursed sister Nezuko.',
+    isHot: true,
+  },
+  {
+    name: 'Dandadan',
+    slug: 'dandadan',
+    cover: '/api/proxy/image?url=https%3A%2F%2Frx.comizy.io%2Fcovers%2F4d5d46b27986.webp',
+    status: 'Ongoing',
+    rating: '4.9',
+    displayChapters: '281 chapters',
+    displayViews: '3.4M views',
+    summary: 'Momo Ayase, who believes in ghosts, and Okarun, who believes in aliens, find out both occult forces are terrifyingly real.',
+    isHot: true,
+  },
+  {
+    name: 'A Silent Voice',
+    slug: 'koe-no-katachi',
+    cover: '/api/proxy/image?url=https%3A%2F%2Frx.comizy.io%2Fcovers%2Fca48cd0a0a4b.webp',
+    status: 'Completed',
+    rating: '5.0',
+    displayChapters: '64 chapters',
+    displayViews: '2.9M views',
+    summary: 'Shoya Ishida seeks redemption after bullying Shoko Nishimiya, a deaf girl, in elementary school, striving to make amends and understand her heart.',
+    isHot: true,
+  },
+  {
+    name: 'Tokyo Revengers',
+    slug: 'tokyo-revengers',
+    cover: '/api/proxy/image?url=https%3A%2F%2Frx.comizy.io%2Fcovers%2Fd1169daa65e8.webp',
+    status: 'Completed',
+    rating: '4.9',
+    displayChapters: '317 chapters',
+    displayViews: '4.2M views',
+    summary: 'Takemichi Hanagaki travels back 12 years in time to his middle school days to save his ex-girlfriend Hinata Tachibana from the Tokyo Manji Gang.',
+    isHot: true,
+  },
+  {
+    name: 'One Piece',
+    slug: 'one-piece',
+    cover: '/api/proxy/image?url=https%3A%2F%2Frx.comizy.io%2Fcovers%2F475200263dfc.webp',
+    status: 'Ongoing',
+    rating: '5.0',
+    displayChapters: '1,308 chapters',
+    displayViews: '12.5M views',
+    summary: 'Monkey D. Luffy and the Straw Hat Pirates embark on the Grand Line to find the legendary treasure One Piece and become King of the Pirates.',
+    isHot: true,
+  },
+  {
+    name: 'Solo Leveling',
+    slug: 'solo-leveling',
+    cover: '/api/proxy/image?url=https%3A%2F%2Frx.comizy.io%2Fcovers%2Fc8ccb9d017d6.webp',
+    status: 'Completed',
+    rating: '5.0',
+    displayChapters: '270 chapters',
+    displayViews: '9.8M views',
+    summary: 'Sung Jinwoo, known as the weakest hunter of all humanity, awakes in a hospital with a mysterious quest log that allows him to level up infinitely.',
+    isHot: true,
+  },
+  {
+    name: 'Jujutsu Kaisen',
+    slug: 'jujutsu-kaisen',
+    cover: '/api/proxy/image?url=https%3A%2F%2Frx.comizy.io%2Fcovers%2Fad0cc8942378.webp',
+    status: 'Completed',
+    rating: '4.9',
+    displayChapters: '478 chapters',
+    displayViews: '6.7M views',
+    summary: 'Yuji Itadori swallows a cursed finger of the King of Curses Sukuna and enrolls in Tokyo Jujutsu High to fight deadly supernatural curses.',
+    isHot: true,
+  },
+  {
+    name: 'Chainsaw Man',
+    slug: 'chainsaw-man',
+    cover: '/api/proxy/image?url=https%3A%2F%2Frx.comizy.io%2Fcovers%2Fa2a5ac41ca4e.webp',
+    status: 'Ongoing',
+    rating: '4.9',
+    displayChapters: '392 chapters',
+    displayViews: '5.1M views',
+    summary: 'Denji makes a contract with the Chainsaw Devil Pochita and is reborn as Chainsaw Man, joining the Public Safety Devil Hunters.',
+    isHot: true,
+  },
+  {
+    name: 'Attack on Titan',
+    slug: 'attack-on-titan',
+    cover: '/api/proxy/image?url=https%3A%2F%2Frx.comizy.io%2Fcovers%2F36c156e0fafc.webp',
+    status: 'Completed',
+    rating: '5.0',
+    displayChapters: '148 chapters',
+    displayViews: '8.4M views',
+    summary: 'Eren Yeager vows to eradicate every Titan after his mother is devoured, joining the Scout Regiment in humanity\'s fight for survival behind massive walls.',
+    isHot: true,
+  },
+  {
+    name: 'SPY x FAMILY',
+    slug: 'spy-x-family',
+    cover: '/api/proxy/image?url=https%3A%2F%2Frx.comizy.io%2Fcovers%2F2735808fdf5a.webp',
+    status: 'Ongoing',
+    rating: '4.9',
+    displayChapters: '278 chapters',
+    displayViews: '3.9M views',
+    summary: 'Master spy Twilight creates a faux family with telepathic orphan Anya and assassin Yor, unaware of each other\'s secret identities.',
+    isHot: true,
+  },
+  {
+    name: 'Berserk',
+    slug: 'berserk',
+    cover: '/api/proxy/image?url=https%3A%2F%2Frx.comizy.io%2Fcovers%2F712f874bf1de.webp',
+    status: 'Ongoing',
+    rating: '5.0',
+    displayChapters: '559 chapters',
+    displayViews: '7.1M views',
+    summary: 'Guts, the Black Swordsman, wields the Dragon Slayer in a dark fantasy realm to exact vengeance against Griffith and the demonic God Hand.',
+    isHot: true,
+  },
+  {
+    name: 'Bleach',
+    slug: 'bleach',
+    cover: '/api/proxy/image?url=https%3A%2F%2Frx.comizy.io%2Fcovers%2F197948f2ac4d.webp',
+    status: 'Completed',
+    rating: '4.9',
+    displayChapters: '728 chapters',
+    displayViews: '6.2M views',
+    summary: 'High school student Ichigo Kurosaki gains the powers of a Soul Reaper to defend humans against evil spirits and guide departed souls.',
+    isHot: true,
+  },
+  {
+    name: 'Naruto',
+    slug: 'naruto',
+    cover: '/api/proxy/image?url=https%3A%2F%2Frx.comizy.io%2Fcovers%2F0b72878c8bcc.webp',
+    status: 'Completed',
+    rating: '4.9',
+    displayChapters: '748 chapters',
+    displayViews: '11.0M views',
+    summary: 'Naruto Uzumaki, a young ninja carrying the Nine-Tailed Fox spirit, dreams of earning the respect of his village and becoming Hokage.',
+    isHot: true,
+  },
+];
 
-const HomeView = {
-  activeHeroIndex: 0,
+const AppHomeView = {
+  heroItems: [],
+  popularItems: [],
+  spotlightList: [],
+  heroIdx: 0,
   heroTimer: null,
+  resumeTimeout: null,
+  isInteracting: false,
 
   async render() {
-    const root = document.getElementById('app-root');
-    root.innerHTML = `
-      <div class="page-loader">
-        <div class="loader-spinner"></div>
-        <p class="loader-text">Loading MangaFlow universe...</p>
-      </div>
-    `;
+    const root = document.getElementById('app-content');
+    root.innerHTML = '<div class="app-loader"><div class="app-spinner"></div></div>';
 
     try {
-      const data = await API.getHome();
-      this.renderContent(root, data);
-    } catch (err) {
+      const data = await API.getHome().catch(() => ({}));
+      const famousList = FAMOUS_MANGA_PRIORITY;
+      const famousSlugs = new Set(famousList.map(m => m.slug));
+
+      // 1. Spotlight Glass Cards: Strictly top famous manga
+      this.spotlightList = famousList.slice(0, 8);
+
+      // 2. Trending Shonen & Hits
+      const rawTrending = (data && data.trendingItems) ? data.trendingItems : [];
+      const trending = [
+        ...famousList,
+        ...rawTrending.filter(m => !famousSlugs.has(m.slug))
+      ];
+
+      // 3. Popular hits
+      const rawPopular = (data && data.popularItems) ? data.popularItems : [];
+      this.popularItems = [
+        ...famousList.slice(4),
+        ...rawPopular.filter(m => !famousSlugs.has(m.slug))
+      ];
+
+      const latest = Array.isArray(data?.latest) ? data.latest : (data?.latest?.items || []);
+      const history = Store.getHistory();
+
       root.innerHTML = `
-        <div class="container" style="padding: 80px 24px; text-align: center;">
-          <h2 style="margin-bottom: 12px;">Unable to load manga feed</h2>
-          <p class="text-muted" style="margin-bottom: 24px;">Please check your connection or retry in a few moments.</p>
-          <button class="btn-glow-primary" onclick="window.location.reload()">Retry Connection</button>
+        <div class="app-page">
+          <!-- Continuous Auto-Scrolling Glass Cards Spotlight (Demon Slayer, Dandadan, Silent Voice, Tokyo Revengers, One Piece, etc.) -->
+          ${this.spotlightList.length > 0 ? this.renderSpotlightCarousel(this.spotlightList) : ''}
+
+          <!-- Quick Action Bar -->
+          <div class="app-quick-actions">
+            <button class="btn-quick-pill" onclick="AppHomeView.rollSurprise()">
+              <span class="quick-pill-icon">🎲</span>
+              <span>Surprise Me</span>
+            </button>
+            <a href="#/search?genres=action,fantasy" class="btn-quick-pill">
+              <span class="quick-pill-icon">⚔️</span>
+              <span>Action & Shonen</span>
+            </a>
+            <a href="#/search?type=manhwa" class="btn-quick-pill">
+              <span class="quick-pill-icon">⚡</span>
+              <span>Top Manhwa</span>
+            </a>
+          </div>
+
+          ${history.length > 0 ? this.renderContinue(history.slice(0, 6)) : ''}
+
+          <!-- 🌟 All-Time Famous Manga & Legends (Rail #1) -->
+          <div class="app-section">
+            <div class="app-section-header">
+              <h2 class="app-section-title">🌟 World Famous Manga</h2>
+              <a href="#/search?sort=views_today" class="app-section-link">See All →</a>
+            </div>
+            <div class="app-rail">
+              ${famousList.map((m, i) => this.card(m, { rank: i + 1 })).join('')}
+            </div>
+          </div>
+
+          <!-- 🔥 Trending Action & Shonen -->
+          <div class="app-section">
+            <div class="app-section-header">
+              <h2 class="app-section-title">🔥 Trending Hits</h2>
+              <a href="#/search?sort=views_today" class="app-section-link">See All →</a>
+            </div>
+            <div class="app-rail">${trending.slice(0, 16).map((m, i) => this.card(m, { rank: i + 1 })).join('')}</div>
+          </div>
+
+          <!-- ⭐ Popular Series Grid -->
+          <div class="app-section">
+            <div class="app-section-header">
+              <h2 class="app-section-title">⭐ Popular Series</h2>
+              <a href="#/search?sort=views_today" class="app-section-link">More →</a>
+            </div>
+            <div class="app-grid">${this.popularItems.slice(0, 9).map(m => this.card(m)).join('')}</div>
+          </div>
+
+          ${latest.length > 0 ? `
+          <div class="app-section">
+            <div class="app-section-header">
+              <h2 class="app-section-title">🕐 Latest Chapters</h2>
+              <a href="#/latest" class="app-section-link">All →</a>
+            </div>
+            <div class="app-grid">${latest.slice(0, 12).map(m => this.card(m, { showChapter: true })).join('')}</div>
+          </div>
+          ` : ''}
+
+          <!-- Credits Area -->
+          <div class="app-credits-area">
+            <div class="app-credits-card">
+              <div class="app-credits-badge">✨ MangaFlow</div>
+              <div class="app-credits-content">
+                <span>Made with love by</span>
+                <span class="app-credits-author">Neer Chan</span>
+                <span class="app-credits-heart">❤</span>
+              </div>
+              <p class="app-credits-sub">Your high-definition manga & manhwa universe</p>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Initialize Auto-Scroll Carousel
+      this.initSpotlightCarousel();
+
+    } catch (e) {
+      console.error(e);
+      root.innerHTML = `
+        <div class="app-page app-empty">
+          <h3>Failed to load</h3>
+          <p>Check your server connection or local network.</p>
+          <button class="btn-app-primary" onclick="AppHomeView.render()">Retry</button>
         </div>
       `;
     }
   },
 
-  renderContent(root, data) {
-    const heroItems = data.heroItems || [];
-    const trendingItems = data.trendingItems || [];
-    const popularItems = data.popularItems || [];
-    const latestItems = Array.isArray(data.latest) ? data.latest : (data.latest?.items || []);
-    const readingHistory = Store.getHistory();
+  renderSpotlightCarousel(items) {
+    if (!items || !items.length) return '';
 
-    root.innerHTML = `
-      <!-- Hero Section -->
-      ${this.renderHeroSection(heroItems)}
+    const cardsHtml = items.map((m, idx) => {
+      const isSaved = Store.isBookmarked(m.slug);
+      const coverUrl = API.resolveUrl(m.cover);
+      const rating = m.rating || m.displayRating || '5.0';
+      const chapters = m.displayChapters || (m.chaptersCount ? `${m.chaptersCount} Ch` : (m.latestChapters?.length ? `${m.latestChapters.length} Ch` : ''));
+      const rawViews = m.displayViews || (m.stats?.views ? `${Math.round(m.stats.views / 1000)}K` : '');
+      const views = rawViews ? String(rawViews).replace(/\s*views/gi, '') + ' views' : '';
+      const badgeText = idx === 0 ? '⚡ SPOTLIGHT' : (idx === 1 ? '🔥 HOT #1' : (idx === 2 ? '⭐ MUST READ' : (idx === 3 ? '👑 LEGENDARY' : '✨ FEATURED')));
+      const summary = m.summary ? this.escape(m.summary.replace(/\n+/g, ' ').slice(0, 95) + '...') : '';
 
-      <div class="container">
-        
-        <!-- Continue Reading Section -->
-        ${this.renderContinueReading(readingHistory)}
+      return `
+        <div class="spotlight-glass-card" data-idx="${idx}" data-slug="${m.slug}">
+          <!-- Ambient Glow Layer behind poster -->
+          <div class="glass-ambient-glow" style="background-image:url('${coverUrl}')"></div>
 
-        <!-- Trending Rail -->
-        <section class="section">
-          <div class="section-header">
-            <div class="section-title-group">
-              <div class="section-icon-pill">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m3 17 6-6 4 4 8-8"></path><path d="M14 7h7v7"></path></svg>
-              </div>
-              <h2 class="section-title">Trending Today</h2>
-            </div>
-            <a href="#/search?sort=views_today" class="section-link">
-              See All
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          <!-- Card Inner Content -->
+          <div class="glass-card-inner">
+            <a href="#/manga/${m.slug}" class="glass-card-poster-link">
+              <img class="glass-card-poster" src="${coverUrl}" alt="${this.escape(m.name)}" loading="${idx === 0 ? 'eager' : 'lazy'}" />
+              <div class="glass-card-poster-shine"></div>
             </a>
-          </div>
-          <div class="snap-rail-wrapper">
-            <div class="snap-rail" id="trending-rail">
-              ${trendingItems.map((item, idx) => this.renderTrendingCard(item, idx + 1)).join('')}
-            </div>
-          </div>
-        </section>
 
-        <!-- Popular Updates Grid -->
-        <section class="section">
-          <div class="section-header">
-            <div class="section-title-group">
-              <div class="section-icon-pill">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+            <div class="glass-card-info">
+              <div class="glass-card-top-row">
+                <span class="glass-badge ${idx === 0 ? 'spotlight' : (idx === 1 ? 'hot' : 'featured')}">${badgeText}</span>
+                <span class="glass-rating">★ ${rating}</span>
               </div>
-              <h2 class="section-title">Popular Updates</h2>
-            </div>
-            <a href="#/search?sort=views_today" class="section-link">
-              Browse All
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
-            </a>
-          </div>
-          <div class="manga-grid">
-            ${popularItems.slice(0, 12).map((item) => this.renderMangaCard(item)).join('')}
-          </div>
-        </section>
 
-        <!-- Latest Releases Grid -->
-        <section class="section" style="padding-top: 10px;">
-          <div class="section-header">
-            <div class="section-title-group">
-              <div class="section-icon-pill">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+              <a href="#/manga/${m.slug}" class="glass-card-title-link">
+                <h2 class="glass-card-title">${this.escape(m.name)}</h2>
+              </a>
+
+              <div class="glass-card-meta">
+                ${chapters ? `<span class="meta-pill">${chapters}</span>` : ''}
+                ${views ? `<span class="meta-pill">${views}</span>` : ''}
+                ${m.status ? `<span class="meta-pill status-pill">${m.status}</span>` : ''}
               </div>
-              <h2 class="section-title">Fresh Chapter Releases</h2>
+
+              ${summary ? `<p class="glass-card-summary">${summary}</p>` : ''}
+
+              <div class="glass-card-actions">
+                <a href="#/manga/${m.slug}" class="btn-glass-read">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                  <span>Read</span>
+                </a>
+                <button class="btn-glass-bookmark ${isSaved ? 'active' : ''}" 
+                        data-slug="${m.slug}" 
+                        title="Bookmark"
+                        onclick="AppHomeView.toggleCardBookmark('${m.slug}', event)">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="${isSaved ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2.2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+                </button>
+              </div>
             </div>
-            <a href="#/latest" class="section-link">
-              View All Updates
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
-            </a>
           </div>
-          <div class="manga-grid">
-            ${latestItems.slice(0, 18).map((item) => this.renderMangaCard(item)).join('')}
-          </div>
-        </section>
+        </div>
+      `;
+    }).join('');
 
-      </div>
-    `;
-
-    this.initHeroSlider(heroItems);
-  },
-
-  renderContinueReading(history) {
-    if (!history || history.length === 0) return '';
-    const items = history.slice(0, 8);
+    const dotsHtml = items.map((_, idx) => `
+      <button class="spotlight-dot ${idx === 0 ? 'active' : ''}" 
+              data-idx="${idx}" 
+              aria-label="Go to slide ${idx + 1}"
+              onclick="AppHomeView.goToSlide(${idx})">
+      </button>
+    `).join('');
 
     return `
-      <section class="section" style="padding-bottom: 20px;">
-        <div class="section-header">
-          <div class="section-title-group">
-            <div class="section-icon-pill">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-            </div>
-            <h2 class="section-title">Continue Reading</h2>
+      <div class="app-spotlight-section">
+        <div class="app-spotlight-carousel-wrap">
+          <div class="app-spotlight-track" id="spotlight-track">
+            ${cardsHtml}
           </div>
-          <a href="#/library?tab=history" class="section-link">
-            Full History
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
-          </a>
         </div>
-        <div class="continue-reading-rail">
-          ${items.map(item => `
-            <a href="#/read/${item.mangaSlug}/${item.chapterSlug}" class="continue-card">
-              <img class="continue-card-thumb" src="${item.cover}" alt="${this.escapeHtml(item.mangaName)}" loading="lazy" />
-              <div class="continue-card-info">
-                <div class="continue-card-title">${this.escapeHtml(item.mangaName)}</div>
-                <div class="continue-card-chapter">${this.escapeHtml(item.chapterName || 'Chapter')}</div>
+        <!-- Sleek Glass Pagination Dots -->
+        <div class="spotlight-pagination" id="spotlight-dots">
+          ${dotsHtml}
+        </div>
+      </div>
+    `;
+  },
+
+  initSpotlightCarousel() {
+    clearInterval(this.heroTimer);
+    clearTimeout(this.resumeTimeout);
+    const track = document.getElementById('spotlight-track');
+    const dotsWrap = document.getElementById('spotlight-dots');
+    if (!track || !this.spotlightList.length) return;
+
+    const cards = track.querySelectorAll('.spotlight-glass-card');
+    const dots = dotsWrap ? dotsWrap.querySelectorAll('.spotlight-dot') : [];
+    if (!cards.length) return;
+
+    this.heroIdx = 0;
+    this.isInteracting = false;
+
+    const updateActiveDot = (activeIdx) => {
+      this.heroIdx = activeIdx;
+      dots.forEach((dot, i) => {
+        dot.classList.toggle('active', i === activeIdx);
+      });
+    };
+
+    // Real-time swipe tracking
+    let scrollRaf = null;
+    track.addEventListener('scroll', () => {
+      if (scrollRaf) cancelAnimationFrame(scrollRaf);
+      scrollRaf = requestAnimationFrame(() => {
+        const scrollLeft = track.scrollLeft;
+        const cardWidth = cards[0].offsetWidth + 14; // including gap
+        const currentIdx = Math.round(scrollLeft / cardWidth);
+        const clampedIdx = Math.max(0, Math.min(currentIdx, cards.length - 1));
+        if (clampedIdx !== this.heroIdx) {
+          updateActiveDot(clampedIdx);
+        }
+      });
+    }, { passive: true });
+
+    // Touch / pointer interaction pause
+    const onTouchStart = () => {
+      this.isInteracting = true;
+      clearInterval(this.heroTimer);
+      clearTimeout(this.resumeTimeout);
+    };
+
+    const onTouchEnd = () => {
+      clearTimeout(this.resumeTimeout);
+      this.resumeTimeout = setTimeout(() => {
+        this.isInteracting = false;
+        startTimer();
+      }, 4000);
+    };
+
+    track.addEventListener('touchstart', onTouchStart, { passive: true });
+    track.addEventListener('touchend', onTouchEnd, { passive: true });
+    track.addEventListener('pointerdown', onTouchStart, { passive: true });
+    track.addEventListener('pointerup', onTouchEnd, { passive: true });
+
+    // Auto-scrolling loop: continuously advances through the cards
+    const startTimer = () => {
+      clearInterval(this.heroTimer);
+      if (cards.length <= 1) return;
+
+      this.heroTimer = setInterval(() => {
+        if (this.isInteracting) return;
+        const nextIdx = (this.heroIdx + 1) % cards.length;
+        this.goToSlide(nextIdx);
+      }, 3800);
+    };
+
+    startTimer();
+  },
+
+  goToSlide(index) {
+    const track = document.getElementById('spotlight-track');
+    if (!track) return;
+    const cards = track.querySelectorAll('.spotlight-glass-card');
+    if (!cards[index]) return;
+
+    const cardWidth = cards[0].offsetWidth + 14; // including gap
+    track.scrollTo({
+      left: index * cardWidth,
+      behavior: 'smooth'
+    });
+
+    this.heroIdx = index;
+    const dotsWrap = document.getElementById('spotlight-dots');
+    if (dotsWrap) {
+      const dots = dotsWrap.querySelectorAll('.spotlight-dot');
+      dots.forEach((dot, i) => dot.classList.toggle('active', i === index));
+    }
+  },
+
+  toggleCardBookmark(slug, event) {
+    if (event) {
+      event.stopPropagation();
+      event.preventDefault();
+    }
+    const item = [...this.spotlightList, ...this.popularItems].find(m => m.slug === slug);
+    if (!item) return;
+
+    const isSaved = Store.toggleBookmark(item);
+    const btn = (event && event.currentTarget) || document.querySelector(`.btn-glass-bookmark[data-slug="${slug}"]`);
+    if (btn) {
+      btn.classList.toggle('active', isSaved);
+      const svg = btn.querySelector('svg');
+      if (svg) svg.setAttribute('fill', isSaved ? 'currentColor' : 'none');
+    }
+
+    if (window.Haptics) window.Haptics.light();
+    if (window.App?.showToast) {
+      window.App.showToast(isSaved ? `⭐ Added "${item.name}" to Library` : `Removed from Library`);
+    }
+  },
+
+  renderContinue(items) {
+    return `
+      <div class="app-section">
+        <div class="app-section-header">
+          <h2 class="app-section-title">▶ Continue Reading</h2>
+          <a href="#/library" class="app-section-link">History →</a>
+        </div>
+        <div class="app-rail">
+          ${items.map(h => `
+            <a href="#/read/${h.mangaSlug}/${h.chapterSlug}" class="app-continue-card">
+              <img src="${API.resolveUrl(h.cover || '')}" alt="${this.escape(h.mangaName)}" class="app-continue-thumb" />
+              <div class="app-continue-info">
+                <div class="app-continue-title">${this.escape(h.mangaName)}</div>
+                <div class="app-continue-ch">${this.escape(h.chapterName)}</div>
               </div>
-              <span class="continue-card-btn">Resume</span>
             </a>
           `).join('')}
         </div>
-      </section>
+      </div>
     `;
   },
 
-  renderHeroSection(items) {
-    if (!items || items.length === 0) return '';
-    const first = items[0];
-    const isSaved = Store.isBookmarked(first.slug);
+  card(m, opts = {}) {
+    const ch = opts.showChapter ? (m.latestChapters?.[0]?.name || m.displayChapters || '') : '';
+    const unread = Store.getUnreadCount(m.slug, m.displayChapters || m.latestChapters?.length || 0);
 
     return `
-      <section class="hero-section">
-        <div class="container">
-          <div class="hero-slider-container" id="hero-slider">
-            <div class="hero-slide-bg" id="hero-bg" style="background-image: url('${first.cover}');"></div>
-            <div class="hero-slide-overlay"></div>
-            
-            <!-- Sakura Particles -->
-            <div class="hero-particles">
-              <div class="petal"></div>
-              <div class="petal"></div>
-              <div class="petal"></div>
-              <div class="petal"></div>
-              <div class="petal"></div>
-              <div class="petal"></div>
-            </div>
-            
-            <div class="hero-slide">
-              <div class="hero-slide-content">
-                <div class="hero-badge-row">
-                  <span class="badge-tag badge-spotlight">Spotlight #1</span>
-                  <span class="badge-tag" style="background: rgba(16, 185, 129, 0.12); color: var(--accent-emerald); border: 1px solid rgba(16, 185, 129, 0.25);">100% Free • No Sign-in Needed</span>
-                  ${first.status ? `<span class="badge-tag">${first.status.toUpperCase()}</span>` : ''}
-                  <span class="badge-tag badge-rating">★ ${first.rating || '5.0'}</span>
-                </div>
-                <h1 class="hero-title" id="hero-title">${this.escapeHtml(first.name)}</h1>
-                <p class="hero-description" id="hero-desc">${this.escapeHtml(first.summary || 'Dive into an unforgettable sequential art journey filled with breathtaking artwork and exhilarating twists.')}</p>
-                
-                <div class="hero-actions">
-                  <a href="#/manga/${first.slug}" class="btn-hero-read" id="hero-read-btn">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                    Read Now
-                  </a>
-                  <button class="btn-hero-bookmark ${isSaved ? 'saved' : ''}" id="hero-bookmark-btn" onclick="HomeView.toggleHeroBookmark('${first.slug}')">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="${isSaved ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
-                    <span>${isSaved ? 'In Library' : 'Add to Library'}</span>
-                  </button>
-                </div>
-              </div>
-
-              <div class="hero-poster-wrapper">
-                <img id="hero-poster" class="hero-poster" src="${first.cover}" alt="${this.escapeHtml(first.name)}" loading="eager" />
-              </div>
-            </div>
-
-            <!-- Arrow Controls -->
-            <div class="slider-arrows">
-              <button class="slider-arrow-btn" onclick="HomeView.prevHero()" aria-label="Previous Slide">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
-              </button>
-              <button class="slider-arrow-btn" onclick="HomeView.nextHero()" aria-label="Next Slide">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
-              </button>
-            </div>
-          </div>
+      <a href="#/manga/${m.slug}" class="app-card">
+        <div class="app-card-poster-wrap">
+          ${opts.rank ? `<span class="app-card-rank r-${opts.rank}">${opts.rank}</span>` : ''}
+          <img class="app-card-poster" src="${API.resolveUrl(m.cover)}" alt="${this.escape(m.name)}" loading="lazy" />
+          <div class="app-card-gradient"></div>
+          ${ch ? `<span class="app-card-ch">${this.escape(ch)}</span>` : ''}
+          ${unread > 0 ? `<span class="app-card-unread-badge">+${unread} NEW</span>` : ''}
         </div>
-      </section>
-    `;
-  },
-
-  renderTrendingCard(item, rank) {
-    const rankClass = rank === 1 ? 'rank-1' : rank === 2 ? 'rank-2' : rank === 3 ? 'rank-3' : 'rank-other';
-    return `
-      <a href="#/manga/${item.slug}" class="manga-card">
-        <div class="manga-card-poster-wrap">
-          <span class="rank-badge ${rankClass}">${rank}</span>
-          <img class="manga-card-poster" src="${item.cover}" alt="${this.escapeHtml(item.name)}" loading="lazy" />
-          <div class="manga-card-overlay-bottom"></div>
-        </div>
-        <div class="manga-card-info">
-          <h3 class="manga-card-title">${this.escapeHtml(item.name)}</h3>
-          <div class="manga-card-meta">
-            <span class="meta-item meta-rating">★ ${item.rating || '5.0'}</span>
-            ${item.displayViews ? `<span class="meta-item">${item.displayViews} views</span>` : ''}
-          </div>
+        <div class="app-card-title">${this.escape(m.name)}</div>
+        <div class="app-card-meta">
+          <span class="gold">★ ${m.rating || '5.0'}</span>
         </div>
       </a>
     `;
   },
 
-  renderMangaCard(item) {
-    const latestChap = item.latestChapters?.[0]?.name || (item.displayChapters ? item.displayChapters : '');
-    return `
-      <a href="#/manga/${item.slug}" class="manga-card">
-        <div class="manga-card-poster-wrap">
-          ${item.isHot ? '<div class="card-badge-top-right"><span class="badge-hot">HOT</span></div>' : ''}
-          <img class="manga-card-poster" src="${item.cover}" alt="${this.escapeHtml(item.name)}" loading="lazy" />
-          <div class="manga-card-overlay-bottom"></div>
-          ${latestChap ? `<span class="badge-chapter-bottom">${this.escapeHtml(latestChap)}</span>` : ''}
-        </div>
-        <div class="manga-card-info">
-          <h3 class="manga-card-title">${this.escapeHtml(item.name)}</h3>
-          <div class="manga-card-meta">
-            <span class="meta-item meta-rating">★ ${item.rating || '5.0'}</span>
-            ${item.displayUpdatedShort ? `<span class="meta-item">${item.displayUpdatedShort}</span>` : ''}
-          </div>
-        </div>
-      </a>
-    `;
-  },
+  rollSurprise() {
+    if (window.Haptics) window.Haptics.light();
+    const pool = [...this.spotlightList, ...this.popularItems];
+    if (!pool.length) return;
 
-  initHeroSlider(items) {
-    if (!items || items.length < 2) return;
-    this.heroItems = items;
-    this.activeHeroIndex = 0;
-
-    clearInterval(this.heroTimer);
-    this.heroTimer = setInterval(() => {
-      this.nextHero();
-    }, 6000);
-  },
-
-  updateHeroSlide() {
-    const item = this.heroItems[this.activeHeroIndex];
-    if (!item) return;
-
-    const bg = document.getElementById('hero-bg');
-    const poster = document.getElementById('hero-poster');
-    const title = document.getElementById('hero-title');
-    const desc = document.getElementById('hero-desc');
-    const readBtn = document.getElementById('hero-read-btn');
-    const bookmarkBtn = document.getElementById('hero-bookmark-btn');
-
-    if (bg) bg.style.backgroundImage = `url('${item.cover}')`;
-    if (poster) {
-      poster.src = item.cover;
-      poster.alt = item.name;
+    const randomChoice = pool[Math.floor(Math.random() * pool.length)];
+    if (window.App?.showToast) {
+      window.App.showToast(`🎲 Opening: ${randomChoice.name}`);
     }
-    if (title) title.textContent = item.name;
-    if (desc) desc.textContent = item.summary || 'Dive into an unforgettable sequential art journey.';
-    if (readBtn) readBtn.href = `#/manga/${item.slug}`;
-
-    if (bookmarkBtn) {
-      const isSaved = Store.isBookmarked(item.slug);
-      bookmarkBtn.className = `btn-hero-bookmark ${isSaved ? 'saved' : ''}`;
-      bookmarkBtn.onclick = () => HomeView.toggleHeroBookmark(item.slug);
-      bookmarkBtn.innerHTML = `
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="${isSaved ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
-        <span>${isSaved ? 'In Library' : 'Add to Library'}</span>
-      `;
-    }
+    window.location.hash = `#/manga/${randomChoice.slug}`;
   },
 
-  nextHero() {
-    if (!this.heroItems || this.heroItems.length === 0) return;
-    this.activeHeroIndex = (this.activeHeroIndex + 1) % this.heroItems.length;
-    this.updateHeroSlide();
-  },
-
-  prevHero() {
-    if (!this.heroItems || this.heroItems.length === 0) return;
-    this.activeHeroIndex = (this.activeHeroIndex - 1 + this.heroItems.length) % this.heroItems.length;
-    this.updateHeroSlide();
-  },
-
-  toggleHeroBookmark(slug) {
-    const item = this.heroItems?.find((x) => x.slug === slug);
-    if (!item) return;
-    const added = Store.toggleBookmark(item);
-    this.updateHeroSlide();
-    App.showToast(added ? `Added "${item.name}" to Library` : `Removed "${item.name}" from Library`);
-  },
-
-  escapeHtml(str) {
+  escape(str) {
     if (!str) return '';
-    return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
-  },
+    return String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
+  }
 };
 
-window.HomeView = HomeView;
+window.AppHomeView = AppHomeView;

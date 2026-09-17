@@ -1,15 +1,16 @@
 {
-  "version": "1.1.2",
-  "versionCode": 4,
+  "version": "1.1.3",
+  "versionCode": 5,
   "minVersionCode": 1,
   "mandatory": false,
-  "title": "MangaFlow v1.1.2 Live Test Update",
+  "title": "MangaFlow v1.1.3 Master Update",
   "releaseDate": "2026-09-17",
-  "fileSize": "6.1 MB",
+  "fileSize": "6.2 MB",
   "changelog": [
-    "Instant cloud OTA update verification",
-    "Ultra-fast chapter loading and image caching",
-    "Enhanced UI smoothness and touch response"
+    "Added Violet Evergarden with complete chapter list & artwork",
+    "Added Frieren, Vinland Saga, Death Note & Steins;Gate to Featured",
+    "Enhanced search relevance for Your Name and iconic franchises",
+    "Expanded Settings touch area and 5-tab bottom navigation dock"
   ],
   "downloadUrl": "/api/app/download-latest"
 }

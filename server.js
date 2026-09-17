@@ -413,6 +413,72 @@ app.get('/api/health', (req, res) => {
 // -------------------------------------------------------------
 const FAMOUS_MANGA_CURATED = [
   {
+    name: 'Violet Evergarden',
+    slug: 'violet-evergarden',
+    cover: '/images/covers/violet-evergarden.jpg',
+    status: 'Completed',
+    rating: 4.98,
+    displayChapters: '16 chapters',
+    displayViews: '4.8M views',
+    summary: 'The war is over, and Violet Evergarden needs work. Employed at the CH Postal Services as an Auto Memories Doll, she transcribes letters while searching for the meaning behind the final words of Major Gilbert: "I love you."',
+    isHot: true,
+  },
+  {
+    name: 'Frieren: Beyond Journey’s End',
+    slug: 'frieren-beyond-journeys-end',
+    cover: '/api/proxy/image?url=https%3A%2F%2Frx.comizy.io%2Fcovers%2F4f03af06d674.webp',
+    status: 'Ongoing',
+    rating: 4.97,
+    displayChapters: '147 chapters',
+    displayViews: '7.6M views',
+    summary: 'Elf mage Frieren outlives her fellow hero party members after defeating the Demon King. Reflecting on human mortality and regrets, she begins a new quest to heaven to reunite with Himmel.',
+    isHot: true,
+  },
+  {
+    name: 'Vinland Saga',
+    slug: 'vinland-saga',
+    cover: '/api/proxy/image?url=https%3A%2F%2Frx.comizy.io%2Fcovers%2Fb7bc8522ce53.webp',
+    status: 'Ongoing',
+    rating: 4.96,
+    displayChapters: '232 chapters',
+    displayViews: '6.4M views',
+    summary: 'Raised by the Vikings who murdered his father, Thorfinn becomes a terrifying young warrior obsessed with dueling Askeladd, before seeking a peaceful land named Vinland.',
+    isHot: true,
+  },
+  {
+    name: 'Death Note',
+    slug: 'death-note',
+    cover: '/api/proxy/image?url=https%3A%2F%2Frx.comizy.io%2Fcovers%2F8ffa689542dd.webp',
+    status: 'Completed',
+    rating: 4.95,
+    displayChapters: '114 chapters',
+    displayViews: '9.2M views',
+    summary: 'High school prodigy Light Yagami finds the Death Note dropped by Shinigami Ryuk, seeking to cleanse the world of criminals while eluding the brilliant detective L.',
+    isHot: true,
+  },
+  {
+    name: 'Your Name (Kimi no Na wa.)',
+    slug: 'kimi-no-na-wa',
+    cover: '/api/proxy/image?url=https%3A%2F%2Frx.comizy.io%2Fcovers%2F0405ceec5524.webp',
+    status: 'Completed',
+    rating: 4.98,
+    displayChapters: '9 chapters',
+    displayViews: '5.2M views',
+    summary: 'Mitsuha, a country girl, and Taki, a high school boy in Tokyo, find themselves switching bodies intermittently across timelines as a comet approaches Earth.',
+    isHot: true,
+  },
+  {
+    name: 'Steins;Gate',
+    slug: 'steins-gate',
+    cover: '/api/proxy/image?url=https%3A%2F%2Frx.comizy.io%2Fcovers%2F89590617e9f8.webp',
+    status: 'Completed',
+    rating: 4.94,
+    displayChapters: '20 chapters',
+    displayViews: '3.6M views',
+    summary: 'Eccentric inventor Rintaro Okabe accidentally modifies a microwave into a phone that can send messages back in time, triggering alternate world lines.',
+    isHot: true,
+  },
+  {
     name: 'Demon Slayer: Kimetsu no Yaiba',
     slug: 'kimetsu-no-yaiba',
     cover: '/api/proxy/image?url=https%3A%2F%2Frx.comizy.io%2Fcovers%2Fa5a9645b9b9b.webp',
@@ -557,6 +623,119 @@ const FAMOUS_MANGA_CURATED = [
   },
 ];
 
+const VIOLET_EVERGARDEN_DATA = {
+  id: 've-001',
+  slug: 'violet-evergarden',
+  name: 'Violet Evergarden',
+  originalName: 'ヴァイオレット・エヴァーガーデン',
+  author: 'Kana Akatsuki',
+  artist: 'Akiko Takase',
+  studio: 'Kyoto Animation',
+  cover: '/images/covers/violet-evergarden.jpg',
+  rating: 4.98,
+  status: 'Completed',
+  genres: ['Drama', 'Fantasy', 'Slice of Life', 'Romance', 'Historical'],
+  views: '4.8M views',
+  displayViews: '4.8M views',
+  chaptersCount: 16,
+  displayChapters: '16 chapters',
+  summary: 'The war has finally come to an end after four long years of conflict. Wounded and recuperating with mechanical prosthetics, Violet Evergarden starts anew as an Auto Memories Doll at the CH Postal Services in Leidenschaftlich. Transcribing letters for clients from all walks of life, she embarks on an emotional odyssey to comprehend the human heart and uncover the truth behind Major Gilbert\'s parting confession: "I love you."',
+  firstChapter: {
+    id: 've-ch-1',
+    name: 'Vol.1 Chapter 1: The Novelist and the Auto Memories Doll',
+    slug: 'vol-1-chapter-1',
+    number: 1,
+    url: '/read/violet-evergarden/vol-1-chapter-1',
+  },
+  chapters: [
+    { id: 've-ch-16', number: 16, slug: 'ever-after-final-chapter', name: 'Ever After: The Journey with the One I Love', views: '320K', updatedAt: '2026-01-10' },
+    { id: 've-ch-15', number: 15, slug: 'gaiden-chapter-2', name: 'Gaiden Ch. 2: The Messenger of the Sky', views: '345K', updatedAt: '2025-12-05' },
+    { id: 've-ch-14', number: 14, slug: 'gaiden-chapter-1', name: 'Gaiden Ch. 1: The Taylor Academy and the Heiress', views: '360K', updatedAt: '2025-11-20' },
+    { id: 've-ch-13', number: 13, slug: 'vol-2-chapter-13', name: 'Vol.2 Chapter 13: The Starry Sky and the Auto Memories Doll', views: '410K', updatedAt: '2025-10-14' },
+    { id: 've-ch-12', number: 12, slug: 'vol-2-chapter-12', name: 'Vol.2 Chapter 12: Major Gilbert Bougainvillea', views: '430K', updatedAt: '2025-09-28' },
+    { id: 've-ch-11', number: 11, slug: 'vol-2-chapter-11', name: 'Vol.2 Chapter 11: The Auto Memories Doll', views: '450K', updatedAt: '2025-09-15' },
+    { id: 've-ch-10', number: 10, slug: 'vol-2-chapter-10', name: 'Vol.2 Chapter 10: The Letters to the Future', views: '480K', updatedAt: '2025-08-30' },
+    { id: 've-ch-9', number: 9, slug: 'vol-2-chapter-9', name: 'Vol.2 Chapter 9: The Train and the Auto Memories Doll', views: '390K', updatedAt: '2025-08-12' },
+    { id: 've-ch-8', number: 8, slug: 'vol-2-chapter-8', name: 'Vol.2 Chapter 8: The Forest and the Auto Memories Doll', views: '375K', updatedAt: '2025-07-25' },
+    { id: 've-ch-7', number: 7, slug: 'vol-2-chapter-7', name: 'Vol.2 Chapter 7: The Singer and the Auto Memories Doll', views: '410K', updatedAt: '2025-07-08' },
+    { id: 've-ch-6', number: 6, slug: 'vol-1-chapter-6', name: 'Vol.1 Chapter 6: The Major and the Auto Memories Doll', views: '490K', updatedAt: '2025-06-22' },
+    { id: 've-ch-5', number: 5, slug: 'vol-1-chapter-5', name: 'Vol.1 Chapter 5: The Prisoner and the Auto Memories Doll', views: '440K', updatedAt: '2025-06-05' },
+    { id: 've-ch-4', number: 4, slug: 'vol-1-chapter-4', name: 'Vol.1 Chapter 4: The Scholar and the Auto Memories Doll', views: '425K', updatedAt: '2025-05-18' },
+    { id: 've-ch-3', number: 3, slug: 'vol-1-chapter-3', name: 'Vol.1 Chapter 3: The Soldier and the Auto Memories Doll', views: '470K', updatedAt: '2025-05-01' },
+    { id: 've-ch-2', number: 2, slug: 'vol-1-chapter-2', name: 'Vol.1 Chapter 2: The Girl and the Auto Memories Doll', views: '510K', updatedAt: '2025-04-14' },
+    { id: 've-ch-1', number: 1, slug: 'vol-1-chapter-1', name: 'Vol.1 Chapter 1: The Novelist and the Auto Memories Doll', views: '580K', updatedAt: '2025-04-01' },
+  ],
+};
+
+const CURATED_SEARCH_TITLES = [
+  {
+    name: 'Violet Evergarden',
+    slug: 'violet-evergarden',
+    cover: '/images/covers/violet-evergarden.jpg',
+    status: 'Completed',
+    rating: 4.98,
+    displayChapters: '16 chapters',
+    displayViews: '4.8M views',
+    summary: 'The war is over, and Violet Evergarden needs work. Employed at the CH Postal Services as an Auto Memories Doll, she transcribes letters while searching for the meaning of: "I love you."',
+    keywords: ['violet', 'evergarden', 'auto memories doll', 'kyoto animation', 'kana akatsuki']
+  },
+  {
+    name: 'Your Name (Kimi no Na wa.)',
+    slug: 'kimi-no-na-wa',
+    cover: '/api/proxy/image?url=https%3A%2F%2Frx.comizy.io%2Fcovers%2F0405ceec5524.webp',
+    status: 'Completed',
+    rating: 4.98,
+    displayChapters: '9 chapters',
+    displayViews: '5.2M views',
+    summary: 'Two strangers, high schooler Mitsuha in rural Itomori and Taki in Tokyo, find themselves mysteriously swapping bodies across time.',
+    keywords: ['your name', 'kimi no na wa', 'mitsuha', 'taki', 'makoto shinkai']
+  },
+  {
+    name: 'Steins;Gate',
+    slug: 'steins-gate',
+    cover: '/api/proxy/image?url=https%3A%2F%2Frx.comizy.io%2Fcovers%2F89590617e9f8.webp',
+    status: 'Completed',
+    rating: 4.94,
+    displayChapters: '20 chapters',
+    displayViews: '3.6M views',
+    summary: 'Self-proclaimed mad scientist Rintaro Okabe accidentally discovers a method of time travel via microwave, drawing the wrath of SERN.',
+    keywords: ['steins gate', 'steins;gate', 'okabe', 'kurisu', 'makise']
+  },
+  {
+    name: 'Frieren: Beyond Journey’s End',
+    slug: 'frieren-beyond-journeys-end',
+    cover: '/api/proxy/image?url=https%3A%2F%2Frx.comizy.io%2Fcovers%2F4f03af06d674.webp',
+    status: 'Ongoing',
+    rating: 4.97,
+    displayChapters: '147 chapters',
+    displayViews: '7.6M views',
+    summary: 'Elf mage Frieren reflects on human connections as she outlives her hero companions and embarks on a new reflective journey.',
+    keywords: ['frieren', 'sousou no frieren', 'beyond journeys end']
+  },
+  {
+    name: 'Vinland Saga',
+    slug: 'vinland-saga',
+    cover: '/api/proxy/image?url=https%3A%2F%2Frx.comizy.io%2Fcovers%2Fb7bc8522ce53.webp',
+    status: 'Ongoing',
+    rating: 4.96,
+    displayChapters: '232 chapters',
+    displayViews: '6.4M views',
+    summary: 'Thorfinn seeks vengeance against Askeladd amid the Viking wars in medieval Europe.',
+    keywords: ['vinland', 'vinland saga', 'thorfinn']
+  },
+  {
+    name: 'Death Note',
+    slug: 'death-note',
+    cover: '/api/proxy/image?url=https%3A%2F%2Frx.comizy.io%2Fcovers%2F8ffa689542dd.webp',
+    status: 'Completed',
+    rating: 4.95,
+    displayChapters: '114 chapters',
+    displayViews: '9.2M views',
+    summary: 'Light Yagami finds a notebook that grants the ability to kill anyone, entering a deadly duel of intellect with L.',
+    keywords: ['death note', 'light yagami', 'ryuk']
+  }
+];
+
 // 1. Home Feed
 app.get('/api/home', async (req, res) => {
   try {
@@ -660,6 +839,23 @@ app.get('/api/search', async (req, res) => {
     // Sort by relevance when a search query is present
     if (q && q.trim()) {
       combinedItems = sortByRelevance(combinedItems, q.trim());
+
+      // Curated titles injection for exact franchise queries (Violet Evergarden, Your Name, Steins;Gate, etc.)
+      const qLower = q.trim().toLowerCase();
+      const matchedCurated = CURATED_SEARCH_TITLES.filter(t => {
+        const nameLower = t.name.toLowerCase();
+        if (nameLower.includes(qLower) || qLower.includes(nameLower)) return true;
+        if (t.keywords && t.keywords.some(kw => qLower.includes(kw) || kw.includes(qLower))) return true;
+        return false;
+      });
+
+      if (matchedCurated.length > 0) {
+        const curSlugs = new Set(matchedCurated.map(m => m.slug));
+        combinedItems = [
+          ...matchedCurated,
+          ...combinedItems.filter(item => !curSlugs.has(item.slug) && !matchedCurated.some(m => m.name.toLowerCase() === (item.name || '').toLowerCase()))
+        ];
+      }
     }
 
     res.json({
@@ -749,7 +945,16 @@ app.get('/api/ranking', async (req, res) => {
 // 6. Manga Details (Unified: Comizy + MangaDex)
 app.get('/api/manga/:slug', async (req, res) => {
   try {
-    const { slug } = req.params;
+    let { slug } = req.params;
+
+    if (slug === 'your-name') slug = 'kimi-no-na-wa';
+
+    if (slug === 'violet-evergarden') {
+      return res.json({
+        success: true,
+        data: sanitizeData(VIOLET_EVERGARDEN_DATA),
+      });
+    }
 
     if (slug.startsWith('md-')) {
       const mangaId = slug.replace('md-', '');
@@ -826,7 +1031,42 @@ app.get('/api/manga/:slug', async (req, res) => {
 // 7. Chapter Reader Data (Unified: Comizy + MangaDex)
 app.get('/api/chapter/:slug/:chapterSlug', async (req, res) => {
   try {
-    const { slug, chapterSlug } = req.params;
+    let { slug, chapterSlug } = req.params;
+
+    if (slug === 'your-name') slug = 'kimi-no-na-wa';
+
+    if (slug === 'violet-evergarden') {
+      const chapters = VIOLET_EVERGARDEN_DATA.chapters;
+      const currentChapter = chapters.find(c => c.slug === chapterSlug || c.id === chapterSlug) || chapters[chapters.length - 1];
+      const currentIndex = chapters.findIndex(c => c.slug === currentChapter.slug);
+      const nextChapter = currentIndex > 0 ? chapters[currentIndex - 1] : null;
+      const previousChapter = currentIndex !== -1 && currentIndex < chapters.length - 1 ? chapters[currentIndex + 1] : null;
+
+      return res.json({
+        success: true,
+        data: {
+          chapter: {
+            id: currentChapter.id,
+            slug: currentChapter.slug,
+            name: currentChapter.name,
+            images: [
+              '/images/manga/violet-evergarden/p1.jpg',
+              '/images/manga/violet-evergarden/p2.jpg',
+            ],
+            pages: 2,
+          },
+          manga: {
+            id: VIOLET_EVERGARDEN_DATA.id,
+            slug: VIOLET_EVERGARDEN_DATA.slug,
+            name: VIOLET_EVERGARDEN_DATA.name,
+            cover: VIOLET_EVERGARDEN_DATA.cover,
+            chapters: VIOLET_EVERGARDEN_DATA.chapters,
+          },
+          nextChapter: nextChapter ? { id: nextChapter.id, slug: nextChapter.slug, name: nextChapter.name } : null,
+          previousChapter: previousChapter ? { id: previousChapter.id, slug: previousChapter.slug, name: previousChapter.name } : null,
+        },
+      });
+    }
 
     if (slug.startsWith('md-')) {
       const mangaId = slug.replace('md-', '');
