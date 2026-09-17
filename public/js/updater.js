@@ -3,8 +3,8 @@
 // ==========================================================================
 
 const AppUpdater = {
-  CURRENT_VERSION: '1.1.3',
-  CURRENT_VERSION_CODE: 5,
+  CURRENT_VERSION: '1.1.4',
+  CURRENT_VERSION_CODE: 6,
   latestVersionData: null,
   isChecking: false,
 
