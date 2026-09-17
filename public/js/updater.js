@@ -357,11 +357,8 @@ const AppUpdater = {
 
       const handleError = (e) => {
         const err = e.detail?.error || 'Download failed';
-        if (errorEl) {
-          errorEl.style.display = 'block';
-          errorEl.innerHTML = `⚠️ Error: ${this.escape(err)}. <a href="${resolvedUrl}" target="_blank" style="color:#60a5fa;text-decoration:underline;">Click to download via browser</a>`;
-        }
-        subEl.textContent = 'Download stopped.';
+        console.warn('[Updater Native Failed, falling back to in-app stream]:', err);
+        this.downloadInAppStream(resolvedUrl, data, fillEl, pctEl, mbEl, subEl, titleEl, errorEl);
       };
 
       window.removeEventListener('mf-update-progress', this._lastProgressHandler);
@@ -374,26 +371,78 @@ const AppUpdater = {
       // Invoke Android Java native method to download and launch package installer
       window.AndroidNative.downloadAndInstallApk(resolvedUrl);
     } else {
-      // Browser fallback (Web version)
-      subEl.textContent = 'Downloading APK file...';
-      try {
-        const a = document.createElement('a');
-        a.href = resolvedUrl;
-        a.download = `MangaFlow-v${data.version || 'latest'}.apk`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-      } catch (e) {
-        window.location.href = resolvedUrl;
+      // In-app stream download directly inside the app with live progress — NO BROWSER REDIRECT
+      this.downloadInAppStream(resolvedUrl, data, fillEl, pctEl, mbEl, subEl, titleEl, errorEl);
+    }
+  },
+
+  async downloadInAppStream(resolvedUrl, data, fillEl, pctEl, mbEl, subEl, titleEl, errorEl) {
+    subEl.textContent = 'Downloading MangaFlow inside app...';
+    try {
+      const response = await fetch(resolvedUrl);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+      const contentLength = response.headers.get('content-length');
+      const total = contentLength ? parseInt(contentLength, 10) : 0;
+      let loaded = 0;
+
+      const reader = response.body.getReader();
+      const chunks = [];
+      let lastUI = 0;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+        loaded += value.length;
+
+        const now = Date.now();
+        if (now - lastUI > 80) {
+          lastUI = now;
+          if (total > 0) {
+            const pct = Math.min(99, Math.round((loaded / total) * 100));
+            fillEl.style.width = `${pct}%`;
+            pctEl.textContent = `${pct}%`;
+            mbEl.textContent = `${(loaded / (1024 * 1024)).toFixed(1)} / ${(total / (1024 * 1024)).toFixed(1)} MB`;
+          } else {
+            mbEl.textContent = `${(loaded / (1024 * 1024)).toFixed(1)} MB`;
+          }
+        }
       }
 
-      setTimeout(() => {
-        fillEl.style.width = '100%';
-        fillEl.classList.add('complete');
-        pctEl.textContent = '100%';
-        titleEl.textContent = 'Download Started';
-        subEl.textContent = 'Check your downloads folder to install MangaFlow.';
-      }, 1200);
+      fillEl.style.width = '100%';
+      fillEl.classList.add('complete');
+      pctEl.textContent = '100%';
+      titleEl.textContent = '🎉 Download Complete!';
+      subEl.textContent = 'APK ready! Tap below to open and install.';
+
+      const blob = new Blob(chunks, { type: 'application/vnd.android.package-archive' });
+      const blobUrl = URL.createObjectURL(blob);
+
+      // Save to device storage
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = `MangaFlow.apk`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      const actionsBox = document.getElementById('update-sheet-actions');
+      if (actionsBox) {
+        actionsBox.innerHTML = `
+          <a href="${blobUrl}" download="MangaFlow.apk" class="btn-update-download" style="text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <span>Open & Install APK</span>
+          </a>
+        `;
+      }
+    } catch (err) {
+      console.error('[Updater] In-app stream error:', err);
+      if (errorEl) {
+        errorEl.style.display = 'block';
+        errorEl.textContent = `Download error: ${err.message}. Please check connection.`;
+      }
+      subEl.textContent = 'Download stopped.';
     }
   },
 

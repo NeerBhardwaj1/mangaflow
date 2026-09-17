@@ -64,11 +64,16 @@ public class MainActivity extends BridgeActivity {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT) {
             android.webkit.WebView.setWebContentsDebuggingEnabled(true);
         }
+        setupNativeBridge();
     }
 
     @Override
     public void onStart() {
         super.onStart();
+        setupNativeBridge();
+    }
+
+    private void setupNativeBridge() {
         if (bridge != null && bridge.getWebView() != null) {
             WebSettings settings = bridge.getWebView().getSettings();
             settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
@@ -77,6 +82,15 @@ public class MainActivity extends BridgeActivity {
             settings.setAllowContentAccess(true);
 
             bridge.getWebView().addJavascriptInterface(new WebAppInterface(), "AndroidNative");
+
+            bridge.getWebView().setDownloadListener(new android.webkit.DownloadListener() {
+                @Override
+                public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
+                    if (url != null && !url.isEmpty()) {
+                        startDownloadAndInstall(url);
+                    }
+                }
+            });
         }
     }
 
