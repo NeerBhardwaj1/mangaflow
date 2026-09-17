@@ -129,6 +129,20 @@ const App = {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     });
+
+    const settingsBtn = document.getElementById('header-settings-btn');
+    if (settingsBtn) {
+      const openSettings = (e) => {
+        e.preventDefault();
+        if (window.Haptics) window.Haptics.light();
+        if (location.hash === '#/settings') {
+          Router.resolve();
+        } else {
+          location.hash = '#/settings';
+        }
+      };
+      settingsBtn.addEventListener('click', openSettings);
+    }
   },
 
   setupTabsHaptics() {

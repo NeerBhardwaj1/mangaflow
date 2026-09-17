@@ -283,12 +283,12 @@ img { max-width: 100%; height: auto; display: block; }
 
 /* Surprise Me 3D Glass Action */
 .header-action-glass-btn {
-  width: 35px;
-  height: 35px;
+  width: 38px;
+  height: 38px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 10px;
+  border-radius: 12px;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.03) 100%);
   border: 1px solid rgba(255, 255, 255, 0.15);
   box-shadow: 
@@ -297,14 +297,40 @@ img { max-width: 100%; height: auto; display: block; }
   font-size: 1.05rem;
   cursor: pointer;
   flex-shrink: 0;
+  position: relative;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
   transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.header-action-glass-btn:active {
+.header-action-glass-btn::after {
+  content: '';
+  position: absolute;
+  top: -8px;
+  bottom: -8px;
+  left: -8px;
+  right: -8px;
+  cursor: pointer;
+}
+
+.header-action-glass-btn svg,
+.header-action-glass-btn .dice-emoji {
+  pointer-events: none;
+}
+
+#header-dice-btn:active {
   transform: scale(0.92) rotate(18deg);
   background: rgba(255, 255, 255, 0.16);
   border-color: rgba(251, 191, 36, 0.5);
   box-shadow: 0 0 16px rgba(251, 191, 36, 0.45);
+}
+
+#header-settings-btn:active {
+  transform: scale(0.92) rotate(45deg);
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(99, 102, 241, 0.5);
+  box-shadow: 0 0 16px rgba(99, 102, 241, 0.45);
 }
 
 .dice-emoji {

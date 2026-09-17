@@ -11,25 +11,27 @@ const AppSettingsView = {
 
     window.scrollTo({ top: 0, behavior: 'instant' });
 
-    const currentVersion = AppUpdater.CURRENT_VERSION;
-    const currentBuild = AppUpdater.CURRENT_VERSION_CODE;
-    const autoCheck = localStorage.getItem('mf_auto_check_updates') !== 'false';
-    const readingMode = localStorage.getItem('mf_reader_mode') || 'webtoon';
-    const qualityMode = localStorage.getItem('mf_reader_quality') || 'high';
-    const currentServer = API.getBaseUrl() || 'http://localhost:3000';
-    const currentTheme = ThemeManager.currentTheme || 'cyberpunk';
+    try {
+      const currentVersion = (typeof AppUpdater !== 'undefined' && AppUpdater.CURRENT_VERSION) || '1.1.2';
+      const currentBuild = (typeof AppUpdater !== 'undefined' && AppUpdater.CURRENT_VERSION_CODE) || 4;
+      const autoCheck = localStorage.getItem('mf_auto_check_updates') !== 'false';
+      const readingMode = localStorage.getItem('mf_reader_mode') || 'webtoon';
+      const qualityMode = localStorage.getItem('mf_reader_quality') || 'high';
+      const currentServer = (typeof API !== 'undefined' && API.getBaseUrl && API.getBaseUrl()) || 'https://mangaflow-wi3s.onrender.com';
+      const currentTheme = (typeof ThemeManager !== 'undefined' && ThemeManager.currentTheme) || 'cyberpunk';
+      const themes = (typeof ThemeManager !== 'undefined' && ThemeManager.THEMES) ? ThemeManager.THEMES : {};
 
-    root.innerHTML = `
-      <div class="app-page app-settings-page">
-        <!-- Settings Top Header -->
-        <div class="app-settings-header">
-          <button class="app-btn-back" onclick="history.back()" aria-label="Go Back">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
-            <span>Back</span>
-          </button>
-          <h1 class="app-settings-title">Settings</h1>
-          <div style="width: 50px;"></div>
-        </div>
+      root.innerHTML = `
+        <div class="app-page app-settings-page">
+          <!-- Settings Top Header -->
+          <div class="app-settings-header">
+            <button class="app-btn-back" id="btn-settings-back" aria-label="Go Back">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
+              <span>Back</span>
+            </button>
+            <h1 class="app-settings-title">Settings</h1>
+            <div style="width: 50px;"></div>
+          </div>
 
         <div class="app-settings-container">
 
@@ -193,16 +195,47 @@ const AppSettingsView = {
       </div>
     `;
 
-    // Check update status to reflect on badge
-    this.refreshUpdateStatus();
+      const backBtn = root.querySelector('#btn-settings-back');
+      if (backBtn) {
+        backBtn.onclick = (e) => {
+          e.preventDefault();
+          if (window.Haptics) window.Haptics.light();
+          if (window.history.length > 1) {
+            window.history.back();
+          } else {
+            location.hash = '#/';
+          }
+        };
+      }
+
+      // Check update status to reflect on badge
+      this.refreshUpdateStatus();
+    } catch (err) {
+      console.error('Settings render error:', err);
+      root.innerHTML = `
+        <div class="app-page app-settings-page">
+          <div class="app-settings-header">
+            <button class="app-btn-back" onclick="location.hash='#/'" aria-label="Go Back">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
+              <span>Back</span>
+            </button>
+            <h1 class="app-settings-title">Settings</h1>
+            <div style="width: 50px;"></div>
+          </div>
+          <div style="padding: 24px; text-align: center; color: var(--text-muted);">
+            <p style="margin-bottom:12px;">Failed to load settings: ${this.escape(err.message)}</p>
+            <button class="btn-settings-primary" onclick="AppSettingsView.render()" style="max-width:200px; margin:0 auto;">Retry</button>
+          </div>
+        </div>
+      `;
+    }
   },
 
   async refreshUpdateStatus() {
     try {
-      const baseUrl = API.getBaseUrl();
-      const res = await fetch(`${baseUrl}/api/app/version?t=${Date.now()}`);
-      if (res.ok) {
-        const data = await res.json();
+      if (typeof AppUpdater === 'undefined') return;
+      const data = await AppUpdater.fetchLatestReleaseInfo();
+      if (data) {
         const isNewer = (data.versionCode > AppUpdater.CURRENT_VERSION_CODE) || 
                         (AppUpdater.compareSemver(data.version, AppUpdater.CURRENT_VERSION) > 0);
         const badge = document.getElementById('settings-update-status-badge');

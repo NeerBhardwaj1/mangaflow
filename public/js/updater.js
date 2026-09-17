@@ -136,6 +136,10 @@ const AppUpdater = {
     if (badge) {
       badge.style.display = show ? 'block' : 'none';
     }
+    const tabDot = document.getElementById('tab-settings-dot');
+    if (tabDot) {
+      tabDot.style.display = show ? 'block' : 'none';
+    }
   },
 
   showUpdateModal(data) {
@@ -254,7 +258,11 @@ const AppUpdater = {
 
     const dismissModal = () => {
       modal.classList.remove('active');
-      setTimeout(() => { modal.style.display = 'none'; }, 280);
+      modal.style.pointerEvents = 'none';
+      setTimeout(() => { 
+        modal.style.display = 'none'; 
+        modal.style.pointerEvents = '';
+      }, 280);
       const remoteCode = parseInt(data.versionCode, 10) || 0;
       sessionStorage.setItem(`mf_dismissed_update_${remoteCode}_${data.version}`, 'true');
       if (window.Haptics) window.Haptics.light();
