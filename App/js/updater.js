@@ -48,14 +48,18 @@ const AppUpdater = {
     this.isChecking = true;
 
     try {
-      const baseUrl = API.getBaseUrl();
-      // Zero-downtime multi-source update endpoints:
-      // 1. GitHub Raw CDN: Instant global edge CDN, zero sleep delay, immediately reflects git pushes
-      // 2. Server API: Active backend (/api/app/version)
-      const endpoints = [
-        `https://raw.githubusercontent.com/NeerBhardwaj1/mangaflow/main/version.json?t=${Date.now()}`,
-        `${baseUrl}/api/app/version?t=${Date.now()}`
-      ];
+      const liveProductionHost = 'https://mangaflow-wi3s.onrender.com';
+      let detectedHost = '';
+      if (typeof API !== 'undefined' && typeof API.getBaseUrl === 'function') {
+        detectedHost = API.getBaseUrl();
+      }
+
+      // Zero-downtime endpoints targeting live cloud backend
+      const endpoints = [];
+      if (detectedHost && (detectedHost.startsWith('http://') || detectedHost.startsWith('https://')) && detectedHost !== liveProductionHost) {
+        endpoints.push(`${detectedHost.replace(/\/+$/, '')}/api/app/version?t=${Date.now()}`);
+      }
+      endpoints.push(`${liveProductionHost}/api/app/version?t=${Date.now()}`);
 
       let data = null;
       let lastErr = null;
@@ -63,7 +67,7 @@ const AppUpdater = {
       for (const endpoint of endpoints) {
         try {
           const ctrl = new AbortController();
-          const tid = setTimeout(() => ctrl.abort(), 4000);
+          const tid = setTimeout(() => ctrl.abort(), 12000);
           const res = await fetch(endpoint, { signal: ctrl.signal });
           clearTimeout(tid);
 
@@ -73,6 +77,8 @@ const AppUpdater = {
               data = parsed;
               break;
             }
+          } else {
+            lastErr = new Error(`Server returned HTTP ${res.status}`);
           }
         } catch (e) {
           lastErr = e;
@@ -80,7 +86,7 @@ const AppUpdater = {
       }
 
       if (!data) {
-        throw new Error(lastErr ? lastErr.message : 'Could not fetch update metadata');
+        throw new Error(lastErr ? (lastErr.message || 'Connection failed') : 'Could not reach update server');
       }
 
       this.latestVersionData = data;
@@ -267,7 +273,15 @@ const AppUpdater = {
   },
 
   downloadAndInstall(url, data = {}) {
-    const resolvedUrl = API.resolveUrl(url);
+    let rawUrl = url || data?.downloadUrl || '/api/app/download-latest';
+    let resolvedUrl = rawUrl;
+    if (!resolvedUrl.startsWith('http://') && !resolvedUrl.startsWith('https://')) {
+      const liveHost = 'https://mangaflow-wi3s.onrender.com';
+      const base = (typeof API !== 'undefined' && API.getBaseUrl && API.getBaseUrl().startsWith('http'))
+        ? API.getBaseUrl()
+        : liveHost;
+      resolvedUrl = `${base.replace(/\/+$/, '')}/${rawUrl.replace(/^\/+/, '')}`;
+    }
     const progressBox = document.getElementById('update-download-progress-box');
     const actionsBox = document.getElementById('update-sheet-actions');
     const fillEl = document.getElementById('update-progress-fill');
