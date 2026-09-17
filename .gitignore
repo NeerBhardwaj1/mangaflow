@@ -1,8 +1,9 @@
 # Dependencies
 node_modules/
 
-# APK binary (too large for git, share separately)
+# APK binary (allow root release MangaFlow.apk for direct distribution)
 *.apk
+!MangaFlow.apk
 
 # Screenshots / audit images
 *.png

@@ -14,5 +14,5 @@
     "New Settings page with Theme customizer, Reader preferences & Auto-Updates",
     "Direct system package installer with live download progress & Update / Cancel prompt"
   ],
-  "downloadUrl": "https://github.com/NeerBhardwaj1/mangaflow/releases/latest/download/MangaFlow.apk"
+  "downloadUrl": "/api/app/download-latest"
 }
