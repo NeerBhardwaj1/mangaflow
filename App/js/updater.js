@@ -48,13 +48,13 @@ const AppUpdater = {
     this.isChecking = true;
 
     try {
+      const githubRawVersionUrl = `https://raw.githubusercontent.com/NeerBhardwaj1/mangaflow/main/version.json?t=${Date.now()}`;
       const liveProductionHost = 'https://mangaflow-wi3s.onrender.com';
-      const githubRawVersionUrl = 'https://raw.githubusercontent.com/NeerBhardwaj1/mangaflow/main/version.json';
 
-      // Zero-downtime endpoints targeting live cloud backend and GitHub directly
+      // Zero-downtime endpoints targeting GitHub CDN directly first, then Render cloud mirror
       const endpoints = [
-        `${liveProductionHost}/api/app/version?t=${Date.now()}`,
-        githubRawVersionUrl
+        githubRawVersionUrl,
+        `${liveProductionHost}/api/app/version?t=${Date.now()}`
       ];
 
       // Only check custom endpoint if explicitly set and NOT localhost
@@ -290,16 +290,17 @@ const AppUpdater = {
   },
 
   downloadAndInstall(url, data = {}) {
+    const githubDirectUrl = 'https://raw.githubusercontent.com/NeerBhardwaj1/mangaflow/main/MangaFlow.apk';
     const liveProductionHost = 'https://mangaflow-wi3s.onrender.com';
-    let rawUrl = url || data?.downloadUrl || `${liveProductionHost}/api/app/download-latest`;
+    let rawUrl = url || data?.downloadUrl || githubDirectUrl;
     let resolvedUrl = rawUrl;
 
     // Never resolve to localhost, 127.0.0.1, or 10.0.2.2 on mobile devices!
     if (!resolvedUrl.startsWith('http://') && !resolvedUrl.startsWith('https://')) {
       resolvedUrl = `${liveProductionHost}/${rawUrl.replace(/^\/+/, '')}`;
     } else if (resolvedUrl.includes('localhost') || resolvedUrl.includes('127.0.0.1') || resolvedUrl.includes('10.0.2.2')) {
-      console.warn('[Updater] Rewriting localhost update URL to live cloud host');
-      resolvedUrl = `${liveProductionHost}/api/app/download-latest`;
+      console.warn('[Updater] Rewriting localhost update URL to GitHub CDN');
+      resolvedUrl = githubDirectUrl;
     }
     const progressBox = document.getElementById('update-download-progress-box');
     const actionsBox = document.getElementById('update-sheet-actions');

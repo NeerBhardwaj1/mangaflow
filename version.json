@@ -7,11 +7,13 @@
   "releaseDate": "2026-09-17",
   "fileSize": "9.1 MB",
   "changelog": [
-    "Seamless cloud over-the-air update verification",
-    "Enhanced cloud connection reliability"
+    "Seamless GitHub CDN over-the-air update delivery",
+    "Lightning-fast direct download from GitHub repository"
   ],
-  "downloadUrl": "https://mangaflow-wi3s.onrender.com/api/app/download-latest",
+  "downloadUrl": "https://raw.githubusercontent.com/NeerBhardwaj1/mangaflow/main/MangaFlow.apk",
+  "mirrorDownloadUrl": "https://mangaflow-wi3s.onrender.com/api/app/download-latest",
   "githubDownloadUrl": "https://github.com/NeerBhardwaj1/mangaflow/releases/latest/download/MangaFlow.apk"
 }
+
 
 
