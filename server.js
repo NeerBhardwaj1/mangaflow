@@ -26,20 +26,23 @@ app.get('/api/app/version', (req, res) => {
     const versionPath = path.join(__dirname, 'version.json');
     if (fs.existsSync(versionPath)) {
       const data = JSON.parse(fs.readFileSync(versionPath, 'utf8'));
+      if (!data.downloadUrl || !data.downloadUrl.startsWith('http')) {
+        data.downloadUrl = 'https://mangaflow-wi3s.onrender.com/api/app/download-latest';
+      }
       return res.json(data);
     }
   } catch (e) {
     console.error('[Version API Error]', e.message);
   }
   res.json({
-    version: '1.0.0',
-    versionCode: 1,
+    version: '1.1.3',
+    versionCode: 5,
     mandatory: false,
-    title: 'MangaFlow v1.0.0',
+    title: 'MangaFlow v1.1.3 Master Update',
     releaseDate: '2026-09-17',
-    fileSize: '7.2 MB',
+    fileSize: '9.1 MB',
     changelog: ['Official MangaFlow release'],
-    downloadUrl: '/api/app/download-latest'
+    downloadUrl: 'https://mangaflow-wi3s.onrender.com/api/app/download-latest'
   });
 });
 

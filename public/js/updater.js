@@ -49,17 +49,26 @@ const AppUpdater = {
 
     try {
       const liveProductionHost = 'https://mangaflow-wi3s.onrender.com';
+      const githubRawVersionUrl = 'https://raw.githubusercontent.com/NeerBhardwaj1/mangaflow/main/version.json';
+
+      // Zero-downtime endpoints targeting live cloud backend and GitHub directly
+      const endpoints = [
+        `${liveProductionHost}/api/app/version?t=${Date.now()}`,
+        githubRawVersionUrl
+      ];
+
+      // Only check custom endpoint if explicitly set and NOT localhost
       let detectedHost = '';
       if (typeof API !== 'undefined' && typeof API.getBaseUrl === 'function') {
         detectedHost = API.getBaseUrl();
+        if (detectedHost && 
+            (detectedHost.startsWith('http://') || detectedHost.startsWith('https://')) && 
+            detectedHost !== liveProductionHost &&
+            !detectedHost.includes('localhost') && 
+            !detectedHost.includes('127.0.0.1')) {
+          endpoints.unshift(`${detectedHost.replace(/\/+$/, '')}/api/app/version?t=${Date.now()}`);
+        }
       }
-
-      // Zero-downtime endpoints targeting live cloud backend
-      const endpoints = [];
-      if (detectedHost && (detectedHost.startsWith('http://') || detectedHost.startsWith('https://')) && detectedHost !== liveProductionHost) {
-        endpoints.push(`${detectedHost.replace(/\/+$/, '')}/api/app/version?t=${Date.now()}`);
-      }
-      endpoints.push(`${liveProductionHost}/api/app/version?t=${Date.now()}`);
 
       let data = null;
       let lastErr = null;
@@ -281,14 +290,16 @@ const AppUpdater = {
   },
 
   downloadAndInstall(url, data = {}) {
-    let rawUrl = url || data?.downloadUrl || '/api/app/download-latest';
+    const liveProductionHost = 'https://mangaflow-wi3s.onrender.com';
+    let rawUrl = url || data?.downloadUrl || `${liveProductionHost}/api/app/download-latest`;
     let resolvedUrl = rawUrl;
+
+    // Never resolve to localhost, 127.0.0.1, or 10.0.2.2 on mobile devices!
     if (!resolvedUrl.startsWith('http://') && !resolvedUrl.startsWith('https://')) {
-      const liveHost = 'https://mangaflow-wi3s.onrender.com';
-      const base = (typeof API !== 'undefined' && API.getBaseUrl && API.getBaseUrl().startsWith('http'))
-        ? API.getBaseUrl()
-        : liveHost;
-      resolvedUrl = `${base.replace(/\/+$/, '')}/${rawUrl.replace(/^\/+/, '')}`;
+      resolvedUrl = `${liveProductionHost}/${rawUrl.replace(/^\/+/, '')}`;
+    } else if (resolvedUrl.includes('localhost') || resolvedUrl.includes('127.0.0.1') || resolvedUrl.includes('10.0.2.2')) {
+      console.warn('[Updater] Rewriting localhost update URL to live cloud host');
+      resolvedUrl = `${liveProductionHost}/api/app/download-latest`;
     }
     const progressBox = document.getElementById('update-download-progress-box');
     const actionsBox = document.getElementById('update-sheet-actions');

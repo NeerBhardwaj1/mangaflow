@@ -8,62 +8,65 @@ const API = {
   _resolvedBaseUrl: null,
 
   async detectFastestServer() {
+    const isNative = (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) ||
+                     location.protocol === 'capacitor:' || location.protocol === 'file:';
+
     const saved = localStorage.getItem('mf_server_url');
     if (saved) {
       const clean = saved.replace(/\/+$/, '');
-      // If user had saved localhost, test if it's currently reachable
-      if (clean.includes('localhost') || clean.includes('127.0.0.1')) {
-        try {
-          const ctrl = new AbortController();
-          const tid = setTimeout(() => ctrl.abort(), 800);
-          const res = await fetch(`${clean}/api/health`, { signal: ctrl.signal });
-          clearTimeout(tid);
-          if (res.ok) {
-            this._resolvedBaseUrl = clean;
-            return clean;
-          }
-        } catch (e) {
-          console.warn('[API] Localhost unreachable, falling back to cloud host');
-        }
+      // If running on a native phone, purge any saved localhost
+      if (isNative && (clean.includes('localhost') || clean.includes('127.0.0.1') || clean.includes('10.0.2.2'))) {
+        console.warn('[API] Purging saved localhost on mobile device');
+        localStorage.removeItem('mf_server_url');
       } else {
         this._resolvedBaseUrl = clean;
-        return this._resolvedBaseUrl;
+        return clean;
       }
     }
 
-    // Auto-detect USB debugging or local dev reverse tunnel on port 3000
-    try {
-      const ctrl = new AbortController();
-      const tid = setTimeout(() => ctrl.abort(), 800);
-      const res = await fetch(`${this.LOCAL_DEV_HOST}/api/health`, { signal: ctrl.signal });
-      clearTimeout(tid);
-      if (res.ok) {
-        this._resolvedBaseUrl = this.LOCAL_DEV_HOST;
-        console.log('[API] Auto-detected local USB dev server on port 3000');
-        return this.LOCAL_DEV_HOST;
-      }
-    } catch (e) {}
+    // Auto-detect dev server ONLY on PC browser, NEVER on mobile
+    if (!isNative) {
+      try {
+        const ctrl = new AbortController();
+        const tid = setTimeout(() => ctrl.abort(), 600);
+        const res = await fetch(`${this.LOCAL_DEV_HOST}/api/health`, { signal: ctrl.signal });
+        clearTimeout(tid);
+        if (res.ok) {
+          this._resolvedBaseUrl = this.LOCAL_DEV_HOST;
+          return this.LOCAL_DEV_HOST;
+        }
+      } catch (e) {}
+    }
 
     this._resolvedBaseUrl = this.DEFAULT_LAN_HOST;
     return this._resolvedBaseUrl;
   },
 
   getBaseUrl() {
-    const saved = localStorage.getItem('mf_server_url');
-    if (saved) return saved.replace(/\/+$/, '');
-
-    if (this._resolvedBaseUrl) return this._resolvedBaseUrl;
-
-    // Check if running inside Capacitor Android native environment
     const isCapacitor = window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform();
     const isAndroidProtocol = location.protocol === 'capacitor:' || location.protocol === 'file:';
     const isBareLocalhost = location.hostname === 'localhost' && !location.port;
+
+    const saved = localStorage.getItem('mf_server_url');
+    if (saved) {
+      const clean = saved.replace(/\/+$/, '');
+      if ((isCapacitor || isAndroidProtocol) && (clean.includes('localhost') || clean.includes('127.0.0.1'))) {
+        return this.DEFAULT_LAN_HOST;
+      }
+      return clean;
+    }
+
+    if (this._resolvedBaseUrl) {
+      if ((isCapacitor || isAndroidProtocol) && (this._resolvedBaseUrl.includes('localhost') || this._resolvedBaseUrl.includes('127.0.0.1'))) {
+        return this.DEFAULT_LAN_HOST;
+      }
+      return this._resolvedBaseUrl;
+    }
 
     if (isCapacitor || isAndroidProtocol || isBareLocalhost) {
       return this.DEFAULT_LAN_HOST;
     }
 
-    // In standard browser testing on PC, relative path points to current host
     return '';
   },
 

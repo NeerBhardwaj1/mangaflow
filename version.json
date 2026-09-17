@@ -5,12 +5,14 @@
   "mandatory": false,
   "title": "MangaFlow v1.1.3 Master Update",
   "releaseDate": "2026-09-17",
-  "fileSize": "6.2 MB",
+  "fileSize": "9.1 MB",
   "changelog": [
     "Added Violet Evergarden with complete chapter list & artwork",
     "Added Frieren, Vinland Saga, Death Note & Steins;Gate to Featured",
     "Enhanced search relevance for Your Name and iconic franchises",
-    "Expanded Settings touch area and 5-tab bottom navigation dock"
+    "Direct Cloud & GitHub update engine (no localhost dependencies)"
   ],
-  "downloadUrl": "/api/app/download-latest"
+  "downloadUrl": "https://mangaflow-wi3s.onrender.com/api/app/download-latest",
+  "githubDownloadUrl": "https://github.com/NeerBhardwaj1/mangaflow/releases/latest/download/MangaFlow.apk"
 }
+
