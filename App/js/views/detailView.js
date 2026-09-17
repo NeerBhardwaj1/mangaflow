@@ -5,6 +5,8 @@
 const AppDetailView = {
   currentManga: null,
   chaptersList: [],
+  isSortAsc: false,
+  chapterFilterQuery: '',
 
   async render(slug) {
     const root = document.getElementById('app-content');
@@ -14,6 +16,8 @@ const AppDetailView = {
       const manga = await API.getManga(slug);
       this.currentManga = manga;
       this.chaptersList = manga.chapters || [];
+      this.isSortAsc = false;
+      this.chapterFilterQuery = '';
 
       // Update total chapters in store for unread tracking
       Store.updateMangaChapterCount(manga.slug, this.chaptersList.length);
@@ -22,7 +26,14 @@ const AppDetailView = {
       const isSaved = !!bookmark;
       const currentShelf = bookmark?.shelf || 'reading';
       const history = Store.getMangaHistory(manga.slug);
-      const firstChapter = manga.chapters && manga.chapters.length > 0 ? manga.chapters[manga.chapters.length - 1] : null;
+
+      // Always find the ACTUAL first chapter (Chapter 0/prologue, Chapter 1, or lowest chapter)
+      let firstChapter = null;
+      if (manga.firstChapter && manga.firstChapter.slug) {
+        firstChapter = manga.firstChapter;
+      } else if (this.chaptersList.length > 0) {
+        firstChapter = this.findFirstChapter(this.chaptersList);
+      }
 
       const genresHtml = (manga.genres || []).map(g => {
         const name = typeof g === 'object' ? g.name : g;
@@ -30,38 +41,9 @@ const AppDetailView = {
         return `<a href="#/search?genre=${encodeURIComponent(s)}" class="app-genre-pill">${name}</a>`;
       }).join('');
 
-      const chaptersHtml = (manga.chapters || []).map((ch, idx) => {
-        const isRead = history && history.chapterSlug === ch.slug;
-        const dateStr = ch.createdAt ? new Date(ch.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '';
-        const isDownloaded = window.Downloader?.isDownloaded(ch.slug);
-        const isDownloading = window.Downloader?.isDownloading(ch.slug);
-
-        return `
-          <div class="app-chapter-row ${isRead ? 'read' : ''}">
-            <a href="#/read/${manga.slug}/${ch.slug}" class="app-chapter-link">
-              <div class="app-chapter-info">
-                <div class="app-chapter-name">${this.escape(ch.name || 'Chapter')}</div>
-                <div class="app-chapter-meta">${dateStr}</div>
-              </div>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
-            </a>
-
-            <!-- Offline Download Button -->
-            <button class="app-chapter-dl-btn ${isDownloaded ? 'downloaded' : ''} ${isDownloading ? 'downloading' : ''}" 
-                    data-ch-slug="${ch.slug}" 
-                    title="${isDownloaded ? 'Downloaded (Tap to delete)' : 'Download offline'}"
-                    onclick="AppDetailView.handleChapterDownload('${ch.slug}', event)">
-              ${isDownloaded ? `
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              ` : isDownloading ? `
-                <div class="mini-dl-spinner"></div>
-              ` : `
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-              `}
-            </button>
-          </div>
-        `;
-      }).join('');
+      // Build initial chapters HTML
+      const sortedChapters = this.getFilteredChapters();
+      const chaptersHtml = this.renderChaptersHtml(sortedChapters, manga, history);
 
       root.innerHTML = `
         <div class="app-detail-backdrop" style="background-image: url('${API.resolveUrl(manga.cover || '')}');"></div>
@@ -99,7 +81,7 @@ const AppDetailView = {
             ${history ? `
               <a href="#/read/${manga.slug}/${history.chapterSlug}" class="btn-app-primary">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                Resume ${this.escape(history.chapterName || 'Chapter')}
+                Resume ${this.escape(this.cleanChapterName(history.chapterName || 'Chapter'))}
               </a>
             ` : firstChapter ? `
               <a href="#/read/${manga.slug}/${firstChapter.slug}" class="btn-app-primary">
@@ -122,17 +104,30 @@ const AppDetailView = {
 
           <!-- Chapters List -->
           <div class="app-section">
-            <div class="app-section-header">
-              <h2 class="app-section-title">Chapters (${manga.chapters ? manga.chapters.length : 0})</h2>
+            <div class="app-detail-chapters-header">
+              <div class="app-detail-chapters-title-row">
+                <h2 class="app-section-title">Chapters (<span id="app-chapter-count-badge">${this.chaptersList.length}</span>)</h2>
+              </div>
+              <div class="app-chapters-controls">
+                <div class="app-chapter-search-box">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                  <input type="text" id="app-chapter-filter-input" placeholder="Search chapters..." oninput="AppDetailView.onFilterChapters(this.value)" autocomplete="off" />
+                  <button id="app-chapter-search-clear" class="app-search-clear-btn" style="display:none;" onclick="AppDetailView.clearChapterFilter()">✕</button>
+                </div>
+                <button class="app-btn-sort-chapters" id="app-btn-sort" onclick="AppDetailView.toggleChapterSort()" title="Toggle Sort Order">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+                  <span id="app-sort-order-label">${this.isSortAsc ? 'Oldest First' : 'Newest First'}</span>
+                </button>
+              </div>
             </div>
-            <div class="app-chapter-list">
+            <div class="app-chapter-list" id="app-chapter-list-container">
               ${chaptersHtml || '<p class="app-empty">No chapters available</p>'}
             </div>
           </div>
 
           <!-- Recommendations Carousel -->
           <div class="app-section" id="recommended-section" style="display:none;">
-            <div class="app-section-header">
+            <div class="app-detail-chapters-header">
               <h2 class="app-section-title">✨ You May Also Like</h2>
             </div>
             <div class="app-rail" id="recommended-rail"></div>
@@ -198,6 +193,176 @@ const AppDetailView = {
     }
   },
 
+  // ------------------------------------------------------------------
+  // Chapter Filtering & Sorting
+  // ------------------------------------------------------------------
+
+  getChapterNum(ch) {
+    if (!ch) return 0;
+    const name = String(ch.name || '');
+    if (/prologue/i.test(name)) return 0;
+    const nm = name.match(/(?:chapter|ch\.?|ep\.?|episode)\s*(\d+(?:\.\d+)?)/i);
+    if (nm) return parseFloat(nm[1]);
+    const sm = String(ch.slug || '').match(/chapter-(\d+(?:-\d+)?)/i);
+    if (sm) return parseFloat(sm[1].replace('-', '.'));
+    if (typeof ch.number === 'number' && !isNaN(ch.number)) return ch.number;
+    return 0;
+  },
+
+  cleanChapterName(name, num) {
+    if (!name && !num) return 'Chapter 1';
+    let str = String(name || '').trim();
+    if (!str || /^\d+(?:\.\d+)?$/.test(str)) {
+      return `Chapter ${str || num || '1'}`;
+    }
+    str = str.replace(/\[[^\]]*\]/gi, '');
+    str = str.replace(/\([^)]*(?:\.com|\.net|\.org|\.io|\.gg|\.me|http|\/\/)[^)]*\)/gi, '');
+    str = str.replace(/\s*[-–—]\s*(?:read\s+at|visit|free\s+on|scan|upload|credit|translated\s+by).*/gi, '');
+    str = str.replace(/https?:\/\/\S+/gi, '');
+    str = str.replace(/\s*(?:by|from|via|translated by|scanlated by|scan by)\s+[\w\s]+$/gi, '');
+    str = str.replace(/^chapter\s*:\s*/i, 'Chapter: ');
+    str = str.replace(/^chapter\s+side[-_\s]*story[-_\s]*(\d+)/i, 'Side Story $1');
+    str = str.replace(/^chapter\s+(spoiler|notice|announcement)/i, (m, p) => p.charAt(0).toUpperCase() + p.slice(1));
+    str = str.replace(/\s+:\s*/g, ': ');
+    str = str.replace(/^ch\.?\s*(\d+(?:\.\d+)?)/i, 'Chapter $1');
+    str = str.replace(/^ep\.?\s*(\d+(?:\.\d+)?)/i, 'Episode $1');
+    if (/^chapter\s/i.test(str)) str = 'Chapter' + str.slice(7);
+    str = str.replace(/\s{2,}/g, ' ').trim();
+    str = str.replace(/[-–—:,;]+$/, '').trim();
+    return str || (num ? `Chapter ${num}` : 'Chapter');
+  },
+
+  findFirstChapter(chapters) {
+    if (!chapters || !chapters.length) return null;
+    const ch0 = chapters.find(c => {
+      const n = this.getChapterNum(c);
+      return n === 0 || /prologue/i.test(c.name || '');
+    });
+    if (ch0) return ch0;
+
+    const ch1 = chapters.find(c => this.getChapterNum(c) === 1);
+    if (ch1) return ch1;
+
+    let lowest = null;
+    let lowestNum = Infinity;
+    for (const c of chapters) {
+      const n = this.getChapterNum(c);
+      if (n >= 0 && n < lowestNum) {
+        lowestNum = n;
+        lowest = c;
+      }
+    }
+    return lowest || chapters[chapters.length - 1];
+  },
+
+  getFilteredChapters() {
+    let list = [...this.chaptersList];
+
+    // Sort by chapter number
+    list.sort((a, b) => {
+      const numA = this.getChapterNum(a);
+      const numB = this.getChapterNum(b);
+      return this.isSortAsc ? numA - numB : numB - numA;
+    });
+
+    // Filter by search query
+    if (this.chapterFilterQuery) {
+      const q = this.chapterFilterQuery.toLowerCase().trim();
+      list = list.filter(ch => {
+        const name = (ch.name || '').toLowerCase();
+        const slug = (ch.slug || '').toLowerCase();
+        const num = String(this.getChapterNum(ch));
+        return name.includes(q) || slug.includes(q) || num === q || `chapter ${num}`.includes(q) || `ch ${num}`.includes(q);
+      });
+    }
+
+    return list;
+  },
+
+  renderChaptersHtml(chapters, manga, history) {
+    if (!chapters || chapters.length === 0) {
+      return '<p class="app-empty">No chapters matching your search.</p>';
+    }
+    manga = manga || this.currentManga;
+    history = history || (manga ? Store.getMangaHistory(manga.slug) : null);
+
+    return chapters.map(ch => {
+      const isRead = history && history.chapterSlug === ch.slug;
+      const dateStr = ch.createdAt || ch.updatedAt
+        ? new Date(ch.createdAt || ch.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+        : '';
+      const isDownloaded = window.Downloader?.isDownloaded(ch.slug);
+      const isDownloading = window.Downloader?.isDownloading(ch.slug);
+      const cleanName = this.cleanChapterName(ch.name, ch.number);
+
+      return `
+        <div class="app-chapter-row ${isRead ? 'read' : ''}">
+          <a href="#/read/${manga.slug}/${ch.slug}" class="app-chapter-link">
+            <div class="app-chapter-info">
+              <div class="app-chapter-name">${this.escape(cleanName)}</div>
+              <div class="app-chapter-meta">${dateStr}</div>
+            </div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </a>
+          <button class="app-chapter-dl-btn ${isDownloaded ? 'downloaded' : ''} ${isDownloading ? 'downloading' : ''}"
+                  data-ch-slug="${ch.slug}"
+                  title="${isDownloaded ? 'Downloaded (Tap to delete)' : 'Download offline'}"
+                  onclick="AppDetailView.handleChapterDownload('${ch.slug}', event)">
+            ${isDownloaded ? `
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            ` : isDownloading ? `
+              <div class="mini-dl-spinner"></div>
+            ` : `
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            `}
+          </button>
+        </div>
+      `;
+    }).join('');
+  },
+
+  onFilterChapters(val) {
+    this.chapterFilterQuery = val.trim();
+    const container = document.getElementById('app-chapter-list-container');
+    const filtered = this.getFilteredChapters();
+    if (container) {
+      container.innerHTML = this.renderChaptersHtml(filtered);
+    }
+    const countBadge = document.getElementById('app-chapter-count-badge');
+    if (countBadge) {
+      if (this.chapterFilterQuery) {
+        countBadge.textContent = `${filtered.length} of ${this.chaptersList.length}`;
+      } else {
+        countBadge.textContent = `${this.chaptersList.length}`;
+      }
+    }
+    const clearBtn = document.getElementById('app-chapter-search-clear');
+    if (clearBtn) {
+      clearBtn.style.display = this.chapterFilterQuery ? 'flex' : 'none';
+    }
+  },
+
+  clearChapterFilter() {
+    const input = document.getElementById('app-chapter-filter-input');
+    if (input) input.value = '';
+    this.onFilterChapters('');
+  },
+
+  toggleChapterSort() {
+    this.isSortAsc = !this.isSortAsc;
+    const label = document.getElementById('app-sort-order-label');
+    if (label) label.textContent = this.isSortAsc ? 'Oldest First' : 'Newest First';
+    const container = document.getElementById('app-chapter-list-container');
+    if (container) {
+      container.innerHTML = this.renderChaptersHtml(this.getFilteredChapters());
+    }
+    if (window.Haptics) window.Haptics.light();
+  },
+
+  // ------------------------------------------------------------------
+  // Downloads
+  // ------------------------------------------------------------------
+
   async handleChapterDownload(chapterSlug, event) {
     if (event) {
       if (typeof event.stopPropagation === 'function') event.stopPropagation();
@@ -241,6 +406,10 @@ const AppDetailView = {
     );
   },
 
+  // ------------------------------------------------------------------
+  // Shelf / Bookmark
+  // ------------------------------------------------------------------
+
   openShelfPicker() {
     const modal = document.getElementById('shelf-picker-modal');
     if (modal) {
@@ -275,6 +444,10 @@ const AppDetailView = {
     if (window.App?.showToast) window.App.showToast('Removed from Library');
     this.render(this.currentManga.slug);
   },
+
+  // ------------------------------------------------------------------
+  // Recommendations
+  // ------------------------------------------------------------------
 
   async loadRecommendations(manga) {
     const firstGenre = manga.genres && manga.genres[0];

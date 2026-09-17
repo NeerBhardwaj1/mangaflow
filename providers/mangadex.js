@@ -77,16 +77,48 @@ function cleanText(text) {
   return cleanedLines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
 }
 
-function cleanChapterName(name) {
-  if (!name || typeof name !== 'string') return 'Chapter';
-  let str = name;
-  // Remove brackets with scanlator group names
-  str = str.replace(/\[[^\]]*(?:scans?|team|translation|group|comics?|raw|hd)[^\]]*\]/gi, '');
+function cleanChapterName(name, num) {
+  if (!name && !num) return 'Chapter 1';
+  let str = String(name || '').trim();
+
+  // If empty or purely a number like "1" or "12.5"
+  if (!str || /^\d+(?:\.\d+)?$/.test(str)) {
+    return `Chapter ${str || num || '1'}`;
+  }
+
+  // Remove bracket-enclosed groups (scanlator names, quality tags, etc.)
+  str = str.replace(/\[[^\]]*\]/gi, '');
   // Remove domain names or URLs in parentheses
-  str = str.replace(/\([^\)]*(?:\.com|\.net|\.org|\.io|\.gg|\.me)[^\)]*\)/gi, '');
+  str = str.replace(/\([^)]*(?:\.com|\.net|\.org|\.io|\.gg|\.me|http|\/\/)[^)]*\)/gi, '');
   // Remove promo suffixes
-  str = str.replace(/\s*[-–—]\s*(?:read\s+at|visit|free\s+on).*/gi, '');
-  return str.trim() || name;
+  str = str.replace(/\s*[-–—]\s*(?:read\s+at|visit|free\s+on|scan|upload|credit|translated\s+by).*/gi, '');
+  // Remove stray URLs
+  str = str.replace(/https?:\/\/\S+/gi, '');
+  // Remove scanlator / group credit mentions
+  str = str.replace(/\s*(?:by|from|via|translated by|scanlated by|scan by)\s+[\w\s]+$/gi, '');
+
+  // Fix "Chapter : Title" -> "Chapter: Title"
+  str = str.replace(/^chapter\s*:\s*/i, 'Chapter: ');
+  // If it's "Chapter side-story-1" -> "Side Story 1"
+  str = str.replace(/^chapter\s+side[-_\s]*story[-_\s]*(\d+)/i, 'Side Story $1');
+  // If it's "Chapter spoiler" -> "Spoiler", "Chapter notice" -> "Notice"
+  str = str.replace(/^chapter\s+(spoiler|notice|announcement)/i, (m, p) => p.charAt(0).toUpperCase() + p.slice(1));
+  // Fix spacing around colons: "Chapter 1 : Romance Dawn" -> "Chapter 1: Romance Dawn"
+  str = str.replace(/\s+:\s*/g, ': ');
+  // Standardize "ch. 1" / "ch 1" -> "Chapter 1"
+  str = str.replace(/^ch\.?\s*(\d+(?:\.\d+)?)/i, 'Chapter $1');
+  // Standardize "ep. 1" / "ep 1" -> "Episode 1"
+  str = str.replace(/^ep\.?\s*(\d+(?:\.\d+)?)/i, 'Episode $1');
+  // Standardize lowercase "chapter 1" -> "Chapter 1"
+  if (/^chapter\s/i.test(str)) {
+    str = 'Chapter' + str.slice(7);
+  }
+  // Collapse multiple spaces
+  str = str.replace(/\s{2,}/g, ' ').trim();
+  // Strip dangling punctuation at the end (- , : ;)
+  str = str.replace(/[-–—:,;]+$/, '').trim();
+
+  return str || (num ? `Chapter ${num}` : 'Chapter');
 }
 
 function getTitle(attributes) {
@@ -179,25 +211,62 @@ const MangaDex = {
     const authorRel = (item.relationships || []).find((r) => r.type === 'author');
     const rawSummary = item.attributes?.description?.en || 'Read this classic manga series on MangaFlow.';
 
-    // Fetch chapters (English, up to 300 chapters)
-    const chaptersUrl = `https://api.mangadex.org/manga/${id}/feed?translatedLanguage[]=en&order[chapter]=desc&limit=300`;
+    // Fetch chapters (English, up to 500 chapters)
+    const chaptersUrl = `https://api.mangadex.org/manga/${id}/feed?translatedLanguage[]=en&order[chapter]=desc&limit=500`;
     const chaptersRes = await fetchJson(chaptersUrl);
 
-    // Group and format chapters
-    const chapters = (chaptersRes.data || []).map((ch) => {
+    let allFeedData = chaptersRes.data || [];
+
+    // If there are more chapters beyond 500, also fetch the tail page to guarantee chapter 1/0
+    if (chaptersRes.total > 500) {
+      try {
+        const tailOffset = Math.max(0, chaptersRes.total - 100);
+        const tailUrl = `https://api.mangadex.org/manga/${id}/feed?translatedLanguage[]=en&order[chapter]=desc&limit=100&offset=${tailOffset}`;
+        const tailRes = await fetchJson(tailUrl);
+        if (tailRes.data && tailRes.data.length > 0) {
+          allFeedData = [...allFeedData, ...tailRes.data];
+        }
+      } catch (tailErr) {
+        console.warn(`[MangaDex] Failed to fetch tail chapters for ${id}:`, tailErr.message);
+      }
+    }
+
+    // Group and format chapters, then deduplicate by chapter number
+    const rawChapters = allFeedData.map((ch) => {
       const num = parseFloat(ch.attributes?.chapter) || 0;
       const chTitle = ch.attributes?.title;
-      const rawName = `Chapter ${ch.attributes?.chapter || '0'}${chTitle ? ': ' + chTitle : ''}`;
+      const chNum = ch.attributes?.chapter || '0';
+      // Build a clean name: "Chapter X" or "Chapter X: Title"
+      let rawName;
+      if (chTitle && chTitle.trim()) {
+        rawName = `Chapter ${chNum}: ${chTitle.trim()}`;
+      } else {
+        rawName = `Chapter ${chNum}`;
+      }
 
       return {
         id: ch.id,
         slug: ch.id,
-        name: cleanChapterName(rawName),
+        name: cleanChapterName(rawName, num),
         number: num,
         views: ch.attributes?.pages || 20,
         updatedAt: ch.attributes?.publishAt || ch.attributes?.createdAt,
+        _hasTitle: !!(chTitle && chTitle.trim()),
       };
     });
+
+    // Deduplicate: keep one entry per chapter number, preferring the one with a title
+    const chapterMap = new Map();
+    for (const ch of rawChapters) {
+      const key = ch.number;
+      const existing = chapterMap.get(key);
+      if (!existing || (!existing._hasTitle && ch._hasTitle)) {
+        chapterMap.set(key, ch);
+      }
+    }
+    const chapters = Array.from(chapterMap.values())
+      .sort((a, b) => b.number - a.number)
+      .map(({ _hasTitle, ...ch }) => ch); // strip internal flag
 
     // Genres / Tags
     const genres = (item.attributes?.tags || []).map((tag) => ({
@@ -205,6 +274,11 @@ const MangaDex = {
       name: tag.attributes?.name?.en || 'Tag',
       slug: (tag.attributes?.name?.en || '').toLowerCase().replace(/\s+/g, '-'),
     }));
+
+    // Find first chapter
+    const firstChapter = chapters.length > 0 
+      ? (chapters.find(c => c.number === 0) || chapters.find(c => c.number === 1) || chapters[chapters.length - 1])
+      : null;
 
     return {
       id: item.id,
@@ -222,6 +296,7 @@ const MangaDex = {
       authors: authorRel ? [{ name: authorRel.attributes?.name || 'Manga Artist' }] : [],
       genres,
       chapters,
+      firstChapter,
       source: 'mangadex',
     };
   },

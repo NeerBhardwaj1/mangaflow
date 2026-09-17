@@ -42,7 +42,9 @@ const DetailView = {
     
     // Sort chapters initially (descending by default)
     const sortedChapters = this.getFilteredChapters();
-    const firstChapter = manga.chapters && manga.chapters.length > 0 ? manga.chapters[manga.chapters.length - 1] : null;
+    const firstChapter = manga.firstChapter && manga.firstChapter.slug
+      ? manga.firstChapter
+      : (manga.chapters && manga.chapters.length > 0 ? this.findFirstChapter(manga.chapters) : null);
     const latestChapter = manga.chapters && manga.chapters.length > 0 ? manga.chapters[0] : null;
 
     root.innerHTML = `
@@ -62,12 +64,12 @@ const DetailView = {
               ${history ? `
                 <a href="#/read/${manga.slug}/${history.chapterSlug}" class="btn-read-primary">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                  Resume ${this.escapeHtml(history.chapterName || 'Chapter')}
+                  Resume ${this.escapeHtml(this.cleanChapterName(history.chapterName || 'Chapter'))}
                 </a>
               ` : firstChapter ? `
                 <a href="#/read/${manga.slug}/${firstChapter.slug}" class="btn-read-primary">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                  Start Reading (Ch. 1)
+                  Start Reading
                 </a>
               ` : ''}
 
@@ -162,17 +164,80 @@ const DetailView = {
     `;
   },
 
+  getChapterNum(ch) {
+    if (!ch) return 0;
+    const name = String(ch.name || '');
+    if (/prologue/i.test(name)) return 0;
+    const nm = name.match(/(?:chapter|ch\.?|ep\.?|episode)\s*(\d+(?:\.\d+)?)/i);
+    if (nm) return parseFloat(nm[1]);
+    const sm = String(ch.slug || '').match(/chapter-(\d+(?:-\d+)?)/i);
+    if (sm) return parseFloat(sm[1].replace('-', '.'));
+    if (typeof ch.number === 'number' && !isNaN(ch.number)) return ch.number;
+    return 0;
+  },
+
+  cleanChapterName(name, num) {
+    if (!name && !num) return 'Chapter 1';
+    let str = String(name || '').trim();
+    if (!str || /^\d+(?:\.\d+)?$/.test(str)) {
+      return `Chapter ${str || num || '1'}`;
+    }
+    str = str.replace(/\[[^\]]*\]/gi, '');
+    str = str.replace(/\([^)]*(?:\.com|\.net|\.org|\.io|\.gg|\.me|http|\/\/)[^)]*\)/gi, '');
+    str = str.replace(/\s*[-–—]\s*(?:read\s+at|visit|free\s+on|scan|upload|credit|translated\s+by).*/gi, '');
+    str = str.replace(/https?:\/\/\S+/gi, '');
+    str = str.replace(/\s*(?:by|from|via|translated by|scanlated by|scan by)\s+[\w\s]+$/gi, '');
+    str = str.replace(/^chapter\s*:\s*/i, 'Chapter: ');
+    str = str.replace(/^chapter\s+side[-_\s]*story[-_\s]*(\d+)/i, 'Side Story $1');
+    str = str.replace(/^chapter\s+(spoiler|notice|announcement)/i, (m, p) => p.charAt(0).toUpperCase() + p.slice(1));
+    str = str.replace(/\s+:\s*/g, ': ');
+    str = str.replace(/^ch\.?\s*(\d+(?:\.\d+)?)/i, 'Chapter $1');
+    str = str.replace(/^ep\.?\s*(\d+(?:\.\d+)?)/i, 'Episode $1');
+    if (/^chapter\s/i.test(str)) str = 'Chapter' + str.slice(7);
+    str = str.replace(/\s{2,}/g, ' ').trim();
+    str = str.replace(/[-–—:,;]+$/, '').trim();
+    return str || (num ? `Chapter ${num}` : 'Chapter');
+  },
+
+  findFirstChapter(chapters) {
+    if (!chapters || !chapters.length) return null;
+    const ch0 = chapters.find(c => {
+      const n = this.getChapterNum(c);
+      return n === 0 || /prologue/i.test(c.name || '');
+    });
+    if (ch0) return ch0;
+
+    const ch1 = chapters.find(c => this.getChapterNum(c) === 1);
+    if (ch1) return ch1;
+
+    let lowest = null;
+    let lowestNum = Infinity;
+    for (const c of chapters) {
+      const n = this.getChapterNum(c);
+      if (n >= 0 && n < lowestNum) {
+        lowestNum = n;
+        lowest = c;
+      }
+    }
+    return lowest || chapters[chapters.length - 1];
+  },
+
   getFilteredChapters() {
     let list = [...this.chaptersList];
-    if (this.isSortAsc) {
-      list.sort((a, b) => (a.number || 0) - (b.number || 0));
-    } else {
-      list.sort((a, b) => (b.number || 0) - (a.number || 0));
-    }
+    list.sort((a, b) => {
+      const numA = this.getChapterNum(a);
+      const numB = this.getChapterNum(b);
+      return this.isSortAsc ? numA - numB : numB - numA;
+    });
 
     if (this.chapterFilterQuery) {
-      const q = this.chapterFilterQuery.toLowerCase();
-      list = list.filter((ch) => (ch.name && ch.name.toLowerCase().includes(q)) || String(ch.number).includes(q));
+      const q = this.chapterFilterQuery.toLowerCase().trim();
+      list = list.filter((ch) => {
+        const name = (ch.name || '').toLowerCase();
+        const slug = (ch.slug || '').toLowerCase();
+        const num = String(this.getChapterNum(ch));
+        return name.includes(q) || slug.includes(q) || num === q || `chapter ${num}`.includes(q);
+      });
     }
     return list;
   },
@@ -187,9 +252,10 @@ const DetailView = {
 
     return chapters.map((ch) => {
       const isRead = readChapterSlug === ch.slug;
+      const cleanName = this.cleanChapterName(ch.name, ch.number);
       return `
         <a href="#/read/${this.currentManga.slug}/${ch.slug}" class="chapter-item ${isRead ? 'read' : ''}">
-          <span class="chapter-item-name" title="${this.escapeHtml(ch.name)}">${this.escapeHtml(ch.name)}</span>
+          <span class="chapter-item-name" title="${this.escapeHtml(cleanName)}">${this.escapeHtml(cleanName)}</span>
           <span class="chapter-item-meta">${ch.views ? `${ch.views} views` : ''}</span>
         </a>
       `;

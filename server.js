@@ -17,6 +17,10 @@ app.get('/MangaFlow.apk', (req, res) => {
   res.download(path.join(__dirname, 'MangaFlow.apk'), 'MangaFlow.apk');
 });
 
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', branding: 'MangaFlow', time: Date.now() });
+});
+
 // Dynamic Build ID Resolver
 let cachedBuildId = '_HrvUeHQGJzVTKw7e8Ag3';
 let lastBuildIdFetch = 0;
@@ -157,13 +161,96 @@ function cleanText(text) {
   return cleanedLines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
 }
 
-function cleanChapterName(name) {
-  if (!name || typeof name !== 'string') return 'Chapter';
-  let str = name;
-  str = str.replace(/\[[^\]]*(?:scans?|team|translation|group|comics?|raw|hd)[^\]]*\]/gi, '');
-  str = str.replace(/\([^\)]*(?:\.com|\.net|\.org|\.io|\.gg|\.me)[^\)]*\)/gi, '');
-  str = str.replace(/\s*[-–—]\s*(?:read\s+at|visit|free\s+on).*/gi, '');
-  return str.trim() || name;
+function cleanChapterName(name, num) {
+  if (!name && !num) return 'Chapter 1';
+  let str = String(name || '').trim();
+
+  // If empty or purely a number like "1" or "12.5"
+  if (!str || /^\d+(?:\.\d+)?$/.test(str)) {
+    return `Chapter ${str || num || '1'}`;
+  }
+
+  // Remove all bracket-enclosed groups (scanlator names, quality tags, etc.)
+  str = str.replace(/\[[^\]]*\]/gi, '');
+  // Remove domain names or URLs in parentheses
+  str = str.replace(/\([^)]*(?:\.com|\.net|\.org|\.io|\.gg|\.me|http|\/\/)[^)]*\)/gi, '');
+  // Remove promo suffixes
+  str = str.replace(/\s*[-–—]\s*(?:read\s+at|visit|free\s+on|scan|upload|credit|translated\s+by).*/gi, '');
+  // Remove stray URLs
+  str = str.replace(/https?:\/\/\S+/gi, '');
+  // Remove scanlator / group credit mentions
+  str = str.replace(/\s*(?:by|from|via|translated by|scanlated by|scan by)\s+[\w\s]+$/gi, '');
+
+  // Fix "Chapter : Title" -> "Chapter: Title"
+  str = str.replace(/^chapter\s*:\s*/i, 'Chapter: ');
+  // If it's "Chapter side-story-1" -> "Side Story 1"
+  str = str.replace(/^chapter\s+side[-_\s]*story[-_\s]*(\d+)/i, 'Side Story $1');
+  // If it's "Chapter spoiler" -> "Spoiler", "Chapter notice" -> "Notice"
+  str = str.replace(/^chapter\s+(spoiler|notice|announcement)/i, (m, p) => p.charAt(0).toUpperCase() + p.slice(1));
+  // Fix spacing around colons: "Chapter 1 : Romance Dawn" -> "Chapter 1: Romance Dawn"
+  str = str.replace(/\s+:\s*/g, ': ');
+  // Standardize "ch. 1" / "ch 1" -> "Chapter 1"
+  str = str.replace(/^ch\.?\s*(\d+(?:\.\d+)?)/i, 'Chapter $1');
+  // Standardize "ep. 1" / "ep 1" -> "Episode 1"
+  str = str.replace(/^ep\.?\s*(\d+(?:\.\d+)?)/i, 'Episode $1');
+  // Standardize lowercase "chapter 1" -> "Chapter 1"
+  if (/^chapter\s/i.test(str)) {
+    str = 'Chapter' + str.slice(7);
+  }
+  // Collapse multiple spaces
+  str = str.replace(/\s{2,}/g, ' ').trim();
+  // Strip dangling punctuation at the end (- , : ;)
+  str = str.replace(/[-–—:,;]+$/, '').trim();
+
+  return str || (num ? `Chapter ${num}` : 'Chapter');
+}
+
+function extractChapterNumber(ch) {
+  if (!ch) return Infinity;
+  const name = String(ch.name || '');
+  if (/prologue/i.test(name)) return 0;
+  const nm = name.match(/(?:chapter|ch\.?|ep\.?|episode)\s*(\d+(?:\.\d+)?)/i);
+  if (nm) return parseFloat(nm[1]);
+
+  const slug = String(ch.slug || '');
+  const sm = slug.match(/chapter-(\d+(?:-\d+)?)/i);
+  if (sm) {
+    return parseFloat(sm[1].replace('-', '.'));
+  }
+
+  if (typeof ch.number === 'number' && !isNaN(ch.number)) return ch.number;
+  return Infinity;
+}
+
+function findFirstChapter(chapters, defaultFirst = null) {
+  if (!chapters || chapters.length === 0) return defaultFirst;
+
+  // 1. Prefer Chapter 0 or Prologue
+  const ch0 = chapters.find(c => {
+    const num = extractChapterNumber(c);
+    return num === 0 || /prologue/i.test(c.name || '');
+  });
+  if (ch0) return ch0;
+
+  // 2. Prefer Chapter 1
+  const ch1 = chapters.find(c => {
+    const num = extractChapterNumber(c);
+    return num === 1;
+  });
+  if (ch1) return ch1;
+
+  // 3. Otherwise find lowest non-negative number
+  let lowest = null;
+  let lowestNum = Infinity;
+  for (const c of chapters) {
+    const num = extractChapterNumber(c);
+    if (num >= 0 && num < lowestNum) {
+      lowestNum = num;
+      lowest = c;
+    }
+  }
+
+  return lowest || defaultFirst || chapters[chapters.length - 1];
 }
 
 // Data Sanitization & Image Proxying Pipeline
@@ -176,8 +263,8 @@ function sanitizeData(obj, keyName = '') {
       return cleanText(obj);
     }
 
-    // If it's a chapter name, clean promo brackets
-    if (keyName === 'name' && (obj.toLowerCase().includes('chapter') || obj.toLowerCase().includes('side.'))) {
+    // If it's a chapter name, clean promo brackets and junk
+    if (keyName === 'name') {
       return cleanChapterName(obj);
     }
 
@@ -631,9 +718,58 @@ app.get('/api/manga/:slug', async (req, res) => {
     if (!data.initialManga) {
       return res.status(404).json({ success: false, error: 'Manga not found' });
     }
+
+    const manga = data.initialManga;
+
+    // Fetch full chapter list from api.comizy.io if manga id is available
+    if (manga.id) {
+      try {
+        const fullChaptersRes = await executeRequest(`https://api.comizy.io/titles/${manga.id}/chapters`);
+        if (fullChaptersRes.status === 200) {
+          const parsed = JSON.parse(fullChaptersRes.body);
+          if (parsed && parsed.data && Array.isArray(parsed.data.chapters) && parsed.data.chapters.length > 0) {
+            manga.chapters = parsed.data.chapters.map((ch) => ({
+              id: ch.id,
+              name: cleanChapterName(ch.name, ch.number),
+              slug: ch.slug,
+              number: ch.number,
+              views: ch.views,
+              updatedAt: ch.updated_at || ch.updatedAt,
+              cv: ch.cv,
+              url: ch.url,
+            }));
+          }
+        }
+      } catch (chErr) {
+        console.warn(`[API /manga/${slug}] Failed to fetch full chapters from api.comizy.io:`, chErr.message);
+      }
+    }
+
+    // Clean existing chapters if full fetch was not used
+    if (Array.isArray(manga.chapters)) {
+      manga.chapters = manga.chapters.map((ch) => ({
+        ...ch,
+        name: cleanChapterName(ch.name, ch.number),
+      }));
+    }
+
+    // Compute and attach the true first chapter (Chapter 0/prologue, Chapter 1, or lowest chapter)
+    const firstChapter = findFirstChapter(manga.chapters, manga.firstChapter);
+    if (firstChapter) {
+      manga.firstChapter = {
+        id: firstChapter.id,
+        name: cleanChapterName(firstChapter.name, firstChapter.number),
+        slug: firstChapter.slug,
+        url: firstChapter.url,
+      };
+    }
+
+    manga.chaptersCount = manga.chapters ? manga.chapters.length : 0;
+    manga.displayChapters = `${manga.chaptersCount} chapters`;
+
     res.json({
       success: true,
-      data: sanitizeData(data.initialManga),
+      data: sanitizeData(manga),
     });
   } catch (err) {
     console.error(`[API /manga/${req.params.slug}] Error:`, err.message);

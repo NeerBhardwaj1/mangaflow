@@ -4,10 +4,37 @@
 
 const API = {
   DEFAULT_LAN_HOST: 'https://mangaflow-wi3s.onrender.com',
+  LOCAL_DEV_HOST: 'http://localhost:3000',
+  _resolvedBaseUrl: null,
+
+  async detectFastestServer() {
+    const saved = localStorage.getItem('mf_server_url');
+    if (saved) {
+      this._resolvedBaseUrl = saved.replace(/\/+$/, '');
+      return this._resolvedBaseUrl;
+    }
+    // If USB debugging or local dev reverse tunnel is available
+    try {
+      const ctrl = new AbortController();
+      const tid = setTimeout(() => ctrl.abort(), 600);
+      const res = await fetch(`${this.LOCAL_DEV_HOST}/api/health`, { signal: ctrl.signal });
+      clearTimeout(tid);
+      if (res.ok) {
+        this._resolvedBaseUrl = this.LOCAL_DEV_HOST;
+        console.log('[API] Connected to local USB dev server on port 3000');
+        return this.LOCAL_DEV_HOST;
+      }
+    } catch (e) {}
+
+    this._resolvedBaseUrl = this.DEFAULT_LAN_HOST;
+    return this._resolvedBaseUrl;
+  },
 
   getBaseUrl() {
     const saved = localStorage.getItem('mf_server_url');
     if (saved) return saved.replace(/\/+$/, '');
+
+    if (this._resolvedBaseUrl) return this._resolvedBaseUrl;
 
     // Check if running inside Capacitor Android native environment
     const isCapacitor = window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform();

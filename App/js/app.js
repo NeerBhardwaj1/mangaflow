@@ -15,6 +15,9 @@ const App = {
       document.documentElement.classList.add('is-mobile-device', 'is-native-app');
     }
 
+    // 0b. Detect server (local dev vs cloud Render)
+    API.detectFastestServer();
+
     // 1. Initialize Store Badge
     Store.updateBadge();
 
